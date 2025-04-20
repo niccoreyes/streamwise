@@ -7,11 +7,14 @@ export type AIModel = {
   maxTokens: number;
   defaultTemperature: number;
 };
+export type MessageContentPart =
+  | { type: "input_text" | "output_text"; text: string }
+  | { type: "input_image"; image_data: string };
 
 export type Message = {
   id: string;
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | MessageContentPart[];
   timestamp: number;
   mediaUrl?: string;
   mediaType?: "image" | "audio" | "video";

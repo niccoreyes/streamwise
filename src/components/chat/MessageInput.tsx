@@ -21,10 +21,12 @@ import {
 import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
+import type { MessageContentPart } from "@/types";
+
 export const MessageInput: React.FC = () => {
   const { sendMessageAndStream } = useConversation();
   const [message, setMessage] = useState("");
-  const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video" } | null>(null);
+  const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video"; file?: File | Blob } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showInsertDialog, setShowInsertDialog] = useState(false);
@@ -34,9 +36,36 @@ export const MessageInput: React.FC = () => {
   const handleSendMessage = async () => {
     if (!message.trim() && !media) return;
 
+    // If image, read as base64 and build content array
+    let content: string | MessageContentPart[] = message;
+    if (media && media.type === "image" && media.file) {
+      const arr: MessageContentPart[] = [];
+      if (message.trim()) {
+        arr.push({ type: "input_text", text: message });
+      }
+      // Read file/blob as base64
+      const file = media.file as File | Blob;
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      arr.push({ type: "input_image", image_data: base64 });
+      content = arr;
+    } else if (media && media.type === "image") {
+      // fallback: if no file, just send as before (should not happen)
+      const arr: MessageContentPart[] = [];
+      if (message.trim()) {
+        arr.push({ type: "input_text", text: message });
+      }
+      arr.push({ type: "input_image", image_data: media.url });
+      content = arr;
+    }
+
     await sendMessageAndStream({
       role: "user",
-      content: message,
+      content,
       ...(media && { mediaUrl: media.url, mediaType: media.type }),
     });
 
@@ -63,7 +92,7 @@ export const MessageInput: React.FC = () => {
 
     const mediaType = fileType as "image" | "audio" | "video";
     const url = URL.createObjectURL(file);
-    setMedia({ url, type: mediaType });
+    setMedia({ url, type: mediaType, file });
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -74,7 +103,7 @@ export const MessageInput: React.FC = () => {
         const blob = items[i].getAsFile();
         if (blob) {
           const url = URL.createObjectURL(blob);
-          setMedia({ url, type: "image" });
+          setMedia({ url, type: "image", file: blob });
           e.preventDefault();
           return;
         }

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
 import { LocalStorage } from '@/lib/localStorage';
 import { Conversation, Message, ModelSettings } from '@/types';
-import { streamChatCompletion } from '@/lib/openaiStreaming';
+import { streamChatCompletion, ChatMessage } from '@/lib/openaiStreaming';
 import { useSettings } from './SettingsContext';
 
 type ConversationContextType = {
@@ -330,7 +330,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const model = updatedConversation.modelId;
     const temperature = updatedConversation.modelSettings.temperature;
     const maxTokens = updatedConversation.modelSettings.maxTokens;
-    const messages = updatedConversation.messages
+    const messages: ChatMessage[] = updatedConversation.messages
       .map(({ role, content }) => ({ role, content }));
     if (!apiKey) {
       // Optionally update assistant message with error

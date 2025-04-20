@@ -4,9 +4,11 @@ import { stringify } from "querystring";
 /**
  * A single message in a chat conversation.
  */
+import type { MessageContentPart } from "@/types";
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: string | MessageContentPart[];
 }
 
 /**
@@ -56,15 +58,51 @@ export async function* streamChatCompletion(
    // Convert messages to the format expected by the Responses API
    // Each message: { role: "user" | "assistant", content: string }
    // We'll use the "input" field as an array of message objects (excluding system messages)
-   const inputMessages = opts.messages
-     .filter(m => m.role === "user" || m.role === "assistant")
-     .map(m => ({
-       role: m.role,
-       content: [{
-         type: m.role === "user" ? "input_text" : "output_text",
-         text: m.content
-       }]
-     }));
+  const inputMessages = opts.messages
+    .filter(m => m.role === "user" || m.role === "assistant")
+    .map(m => {
+      let contentArr: any[] = [];
+      if (typeof m.content === "string") {
+        // Default to input_text for user, output_text for assistant
+        contentArr = [
+          {
+            type: m.role === "user" ? "input_text" : "output_text",
+            text: m.content,
+          },
+        ];
+      } else if (Array.isArray(m.content)) {
+        contentArr = m.content.map((part) => {
+          if (
+            part.type === "input_text" ||
+            part.type === "output_text"
+          ) {
+            return {
+              type: part.type,
+              text: (part as any).text || (part as any).value || "",
+            };
+          }
+          if (part.type === "input_image" || part.type === "image") {
+            return {
+              type: "input_image",
+              image_url:
+                (part as any).image_url ||
+                (part as any).image_data ||
+                (part as any).value ||
+                "",
+            };
+          }
+          // fallback: treat as text
+          return {
+            type: "input_text",
+            text: (part as any).text || (part as any).value || "",
+          };
+        });
+      }
+      return {
+        role: m.role,
+        content: contentArr,
+      };
+    });
  
    // If this is the first turn (no previousResponseId), send the full conversation as input
    // Otherwise, send only the latest user message as input, and set previous_response_id
