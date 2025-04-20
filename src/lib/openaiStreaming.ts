@@ -118,17 +118,23 @@ export async function* streamChatCompletion(
    }
  
    // Build the payload for the Responses API
+   // Only include temperature if model is NOT an "o" series reasoning model (e.g., o3, o4)
+   const isOReasoningModel = /^o\d/i.test(opts.model);
+
    const payload: any = {
      model: opts.model,
      input,
      stream: true,
-     temperature: opts.temperature,
      max_output_tokens: opts.maxTokens,
      instructions: opts.systemMessage || undefined,
      tools: opts.tools || undefined,
      previous_response_id: previous_response_id || undefined,
    };
- 
+
+   if (!isOReasoningModel) {
+     payload.temperature = opts.temperature;
+   }
+
    // Remove undefined fields
    Object.keys(payload).forEach(
      (key) => payload[key] === undefined && delete payload[key]
