@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 export const MessageInput: React.FC = () => {
   const { sendMessageAndStream } = useConversation();

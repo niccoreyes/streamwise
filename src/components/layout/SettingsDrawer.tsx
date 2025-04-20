@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { useSettings } from "@/context/SettingsContext";
 import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
-import { Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -121,8 +122,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         ...currentConversation.modelSettings,
         webSearchSettings: enabled
           ? currentConversation.modelSettings.webSearchSettings || {
-              contextSize: 3,
-              region: "United States",
+              contextSize: "medium",
+              location: {
+                type: "approximate",
+                country: "",
+                city: "",
+                region: "",
+                timezone: "",
+              },
             }
           : currentConversation.modelSettings.webSearchSettings,
       },
@@ -434,27 +441,27 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <select
                       id="contextSize"
                       className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
-                      value={currentConversation.modelSettings.webSearchSettings?.contextSize || 3}
+                      value={currentConversation.modelSettings.webSearchSettings?.contextSize || "medium"}
                       onChange={(e) => {
                         if (!currentConversation?.modelSettings?.webSearchSettings) return;
-                        
+
                         const updatedConversation = {
                           ...currentConversation,
                           modelSettings: {
                             ...currentConversation.modelSettings,
                             webSearchSettings: {
                               ...currentConversation.modelSettings.webSearchSettings,
-                              contextSize: parseInt(e.target.value),
+                              contextSize: e.target.value as "low" | "medium" | "high",
                             },
                           },
                         };
-                        
+
                         updateConversation(updatedConversation);
                       }}
                     >
-                      {[1, 2, 3, 4, 5].map((size) => (
+                      {["low", "medium", "high"].map((size) => (
                         <option key={size} value={size}>
-                          {size} {size === 1 ? "result" : "results"}
+                          {size.charAt(0).toUpperCase() + size.slice(1)}
                         </option>
                       ))}
                     </select>
@@ -465,21 +472,24 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <Input
                       id="region"
                       placeholder="United States"
-                      value={currentConversation.modelSettings.webSearchSettings?.region || ""}
+                      value={currentConversation.modelSettings.webSearchSettings?.location?.region || ""}
                       onChange={(e) => {
                         if (!currentConversation?.modelSettings?.webSearchSettings) return;
-                        
+
                         const updatedConversation = {
                           ...currentConversation,
                           modelSettings: {
                             ...currentConversation.modelSettings,
                             webSearchSettings: {
                               ...currentConversation.modelSettings.webSearchSettings,
-                              region: e.target.value,
+                              location: {
+                                ...currentConversation.modelSettings.webSearchSettings.location,
+                                region: e.target.value,
+                              },
                             },
                           },
                         };
-                        
+
                         updateConversation(updatedConversation);
                       }}
                     />

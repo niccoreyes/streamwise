@@ -35,9 +35,14 @@ export type ModelSettings = {
 };
 
 export type WebSearchSettings = {
-  contextSize: number;
-  region: string;
-  city?: string;
+  contextSize: "low" | "medium" | "high";
+  location: {
+    type: "approximate";
+    country: string;
+    city: string;
+    region: string;
+    timezone: string;
+  };
 };
 
 export type ApiKey = {
