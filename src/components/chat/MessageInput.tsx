@@ -1,10 +1,24 @@
-
 import React, { useState, useRef, ChangeEvent } from "react";
 import { Send, Paperclip, X, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus } from "lucide-react";
 
 export const MessageInput: React.FC = () => {
   const { sendMessageAndStream } = useConversation();
@@ -12,6 +26,9 @@ export const MessageInput: React.FC = () => {
   const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video" } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showInsertDialog, setShowInsertDialog] = useState(false);
+  const [manualMessage, setManualMessage] = useState("");
+  const [messageRole, setMessageRole] = useState<"system" | "user" | "assistant">("user");
 
   const handleSendMessage = async () => {
     if (!message.trim() && !media) return;
@@ -71,7 +88,6 @@ export const MessageInput: React.FC = () => {
     }
   };
 
-  // For demo - simulate speech recognition button
   const handleMicClick = () => {
     alert("Speech recognition would be implemented here with OpenAI Whisper API");
   };
@@ -82,6 +98,18 @@ export const MessageInput: React.FC = () => {
       textareaRef.current.style.height = 
         Math.min(textareaRef.current.scrollHeight, 120) + "px";
     }
+  };
+
+  const handleInsertMessage = async () => {
+    if (!manualMessage.trim()) return;
+
+    await sendMessageAndStream({
+      role: messageRole,
+      content: manualMessage,
+    });
+
+    setManualMessage("");
+    setShowInsertDialog(false);
   };
 
   return (
@@ -114,6 +142,49 @@ export const MessageInput: React.FC = () => {
       )}
       
       <div className="flex items-end space-x-2">
+        <Dialog open={showInsertDialog} onOpenChange={setShowInsertDialog}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Insert Message</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Message Role</Label>
+                <Select value={messageRole} onValueChange={(value: typeof messageRole) => setMessageRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="assistant">Assistant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Message Content</Label>
+                <Textarea
+                  value={manualMessage}
+                  onChange={(e) => setManualMessage(e.target.value)}
+                  placeholder="Enter message content..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <Button onClick={handleInsertMessage}>Insert Message</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}

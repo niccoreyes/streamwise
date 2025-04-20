@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useSettings } from "@/context/SettingsContext";
 import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
+import { Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -37,7 +37,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const [newKeyValue, setNewKeyValue] = useState("");
   const [newKeyProvider, setNewKeyProvider] = useState<"openai" | "custom">("openai");
   const [showAddKey, setShowAddKey] = useState(false);
-  
+  const [systemMessage, setSystemMessage] = useState("");
+  const [webSearchConfig, setWebSearchConfig] = useState({
+    enabled: false,
+    contextSize: "medium" as "low" | "medium" | "high",
+    location: {
+      type: "approximate" as const,
+      country: "",
+      city: "",
+      region: "",
+      timezone: "",
+    },
+  });
+
   const handleSaveKey = async () => {
     if (newKeyName.trim() && newKeyValue.trim()) {
       await saveApiKey({
@@ -54,7 +66,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const handleModelChange = (modelId: string) => {
     setSelectedModel(modelId);
     
-    // If there's an active conversation, update its model settings
     if (currentConversation) {
       const model = availableModels.find(m => m.id === modelId);
       if (model) {
@@ -120,6 +131,35 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     updateConversation(updatedConversation);
   };
 
+  const handleSystemMessageChange = (value: string) => {
+    setSystemMessage(value);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        systemMessage: value,
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
+  const handleWebSearchSettingsChange = (settings: typeof webSearchConfig) => {
+    setWebSearchConfig(settings);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        webSearchEnabled: settings.enabled,
+        modelSettings: {
+          ...currentConversation.modelSettings,
+          webSearchSettings: settings.enabled ? {
+            contextSize: settings.contextSize,
+            location: settings.location,
+          } : undefined,
+        },
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
   return (
     <>
       <div
@@ -144,7 +184,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         </div>
         
         <div className="p-6 space-y-6">
-          {/* API Key Management */}
           <div>
             <h4 className="text-sm font-medium mb-3">API Keys</h4>
             
@@ -284,7 +323,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
           <Separator />
           
-          {/* Model Selection */}
           <div>
             <h4 className="text-sm font-medium mb-3">AI Model</h4>
             <RadioGroup
@@ -324,7 +362,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
           <Separator />
           
-          {/* Model Parameters */}
           {currentConversation && (
             <div>
               <h4 className="text-sm font-medium mb-3">Model Parameters</h4>
@@ -375,7 +412,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
           <Separator />
           
-          {/* Web Search Options */}
           {currentConversation && selectedModel.supportsWebSearch && (
             <div>
               <h4 className="text-sm font-medium mb-3">Web Search</h4>
@@ -450,6 +486,118 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          <Separator />
+          
+          <div>
+            <h4 className="text-sm font-medium mb-3">System Message</h4>
+            <Textarea
+              placeholder="Describe desired model behavior (tone, tool usage, response style)"
+              value={systemMessage}
+              onChange={(e) => handleSystemMessageChange(e.target.value)}
+              className="min-h-[150px] resize-y"
+            />
+          </div>
+
+          <Separator />
+          
+          {currentConversation && selectedModel.supportsWebSearch && (
+            <div>
+              <h4 className="text-sm font-medium mb-3">Web Search Configuration</h4>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="webSearchEnabled">Enable web search</Label>
+                  <Switch
+                    id="webSearchEnabled"
+                    checked={webSearchConfig.enabled}
+                    onCheckedChange={(enabled) => handleWebSearchSettingsChange({
+                      ...webSearchConfig,
+                      enabled,
+                    })}
+                  />
+                </div>
+                
+                {webSearchConfig.enabled && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Search Context Size</Label>
+                      <Select
+                        value={webSearchConfig.contextSize}
+                        onValueChange={(value: "low" | "medium" | "high") => 
+                          handleWebSearchSettingsChange({
+                            ...webSearchConfig,
+                            contextSize: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low (Fastest)</SelectItem>
+                          <SelectItem value="medium">Medium (Balanced)</SelectItem>
+                          <SelectItem value="high">High (Most comprehensive)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Location Settings</Label>
+                      <div className="grid gap-2">
+                        <Input
+                          placeholder="Country (e.g., US, GB)"
+                          value={webSearchConfig.location.country}
+                          onChange={(e) => handleWebSearchSettingsChange({
+                            ...webSearchConfig,
+                            location: {
+                              ...webSearchConfig.location,
+                              country: e.target.value,
+                            },
+                          })}
+                          maxLength={2}
+                          className="uppercase"
+                        />
+                        <Input
+                          placeholder="City"
+                          value={webSearchConfig.location.city}
+                          onChange={(e) => handleWebSearchSettingsChange({
+                            ...webSearchConfig,
+                            location: {
+                              ...webSearchConfig.location,
+                              city: e.target.value,
+                            },
+                          })}
+                        />
+                        <Input
+                          placeholder="Region/State"
+                          value={webSearchConfig.location.region}
+                          onChange={(e) => handleWebSearchSettingsChange({
+                            ...webSearchConfig,
+                            location: {
+                              ...webSearchConfig.location,
+                              region: e.target.value,
+                            },
+                          })}
+                        />
+                        <Input
+                          placeholder="Timezone (e.g., America/New_York)"
+                          value={webSearchConfig.location.timezone}
+                          onChange={(e) => handleWebSearchSettingsChange({
+                            ...webSearchConfig,
+                            location: {
+                              ...webSearchConfig.location,
+                              timezone: e.target.value,
+                            },
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
