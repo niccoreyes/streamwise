@@ -292,6 +292,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         maxTokens,
         messages,
         ...(tools ? { tools } : {}),
+        systemMessage: updatedConversation.systemMessage,
       })) {
         fullContent += delta;
         assistantMessage.content = fullContent;

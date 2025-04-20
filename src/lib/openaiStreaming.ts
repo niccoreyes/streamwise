@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { stringify } from "querystring";
 
 /**
  * A single message in a chat conversation.
@@ -40,6 +41,12 @@ export async function* streamChatCompletion(
     apiKey: opts.apiKey,
     dangerouslyAllowBrowser: true,
   });
+
+  if (!opts.systemMessage) {
+    console.warn(
+      "[openaiStreaming] systemMessage (system prompt) is missing from API call. The system prompt will not be included in the request. Ensure it is set in context/settings before calling streamChatCompletion."
+    );
+  }
  
    // Build input for Responses API according to OpenAI docs
    // https://platform.openai.com/docs/api-reference/responses/create
@@ -89,6 +96,9 @@ export async function* streamChatCompletion(
      (key) => payload[key] === undefined && delete payload[key]
    );
  
+   // Debug log: Output the payload being sent to OpenAI
+  //  console.debug("[openaiStreaming] OpenAI responses.create payload:", JSON.stringify(payload, null, 2));
+   console.debug("[openaiStreaming] instructions:", payload.systemMessage);
    // Use the OpenAI SDK's responses.create for streaming
    const stream = await (client as any).responses.create(payload);
  

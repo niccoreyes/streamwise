@@ -218,6 +218,8 @@ const setWebSearchConfig = (config: WebSearchConfig) => {
 };
 const setSystemMessage = (msg: string) => {
   setSystemMessageState(msg);
+  chatDb.setSetting("systemMessage", msg);
+  console.debug("[SettingsContext] System Message: ", msg)
 };
 
 const value = {

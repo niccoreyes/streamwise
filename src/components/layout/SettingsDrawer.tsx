@@ -47,6 +47,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   );
   const [showAddKey, setShowAddKey] = useState(false);
   const { webSearchConfig, setWebSearchConfig, systemMessage, setSystemMessage } = useSettings();
+  const [localSystemMessage, setLocalSystemMessage] = useState(systemMessage);
+
+  // Sync local state with context when drawer opens
+  React.useEffect(() => {
+    if (isOpen) setLocalSystemMessage(systemMessage);
+  }, [isOpen, systemMessage]);
+
+  // On drawer close, commit localSystemMessage to context/IndexedDB
+  const handleDrawerClose = () => {
+    setSystemMessage(localSystemMessage);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        systemMessage: localSystemMessage,
+      };
+      updateConversation(updatedConversation);
+    }
+    onClose();
+  };
 
   const handleSaveKey = async () => {
     if (newKeyName.trim() && newKeyValue.trim()) {
@@ -173,7 +192,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           "fixed inset-0 bg-black/30 z-40 transition-opacity",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        onClick={onClose}
+        onClick={handleDrawerClose}
       />
 
       <div
@@ -184,7 +203,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <h3 className="text-lg font-medium">Settings</h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={handleDrawerClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -558,15 +577,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <h4 className="text-sm font-medium mb-3">System Message</h4>
             <Textarea
               placeholder="Describe desired model behavior (tone, tool usage, response style)"
-              value={systemMessage}
+              value={localSystemMessage}
               onChange={(e) => {
+                setLocalSystemMessage(e.target.value);
                 setSystemMessage(e.target.value);
-                if (!currentConversation) return;
-                const updatedConversation = {
-                  ...currentConversation,
-                  systemMessage: e.target.value,
-                };
-                updateConversation(updatedConversation);
               }}
               className="min-h-[150px] resize-y"
             />
