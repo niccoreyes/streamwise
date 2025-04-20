@@ -7,7 +7,7 @@ import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
 
 export const MessageInput: React.FC = () => {
-  const { addMessage } = useConversation();
+  const { sendMessageAndStream } = useConversation();
   const [message, setMessage] = useState("");
   const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video" } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -16,22 +16,11 @@ export const MessageInput: React.FC = () => {
   const handleSendMessage = async () => {
     if (!message.trim() && !media) return;
 
-    await addMessage({
+    await sendMessageAndStream({
       role: "user",
       content: message,
       ...(media && { mediaUrl: media.url, mediaType: media.type }),
     });
-
-    // If we sent a message with media, it might trigger an AI response
-    // For this example, we'll simulate an AI response with a basic reply
-    if (media) {
-      setTimeout(() => {
-        addMessage({
-          role: "assistant",
-          content: `I've received your ${media.type}. How can I help you with it?`,
-        });
-      }, 1000);
-    }
 
     setMessage("");
     setMedia(null);

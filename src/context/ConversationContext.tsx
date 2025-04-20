@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
 import { LocalStorage } from '@/lib/localStorage';
 import { Conversation, Message, ModelSettings } from '@/types';
+import { streamChatCompletion } from '@/lib/openaiStreaming';
+import { useSettings } from './SettingsContext';
 
 type ConversationContextType = {
   conversations: Conversation[];
@@ -16,6 +18,7 @@ type ConversationContextType = {
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
   updateMessage: (message: Message) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
+  sendMessageAndStream: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
 };
 
 const defaultModelSettings: ModelSettings = {
@@ -29,7 +32,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const settings = useSettings();
   // Load conversations on mount
   useEffect(() => {
     const loadConversations = async () => {
@@ -225,6 +228,85 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     await updateConversation(updatedConversation);
   };
 
+  // New: Send message and stream assistant response
+  const sendMessageAndStream = async (message: Omit<Message, 'id' | 'timestamp'>): Promise<void> => {
+    if (!currentConversation) return;
+    // 1. Add user message
+    const userMessage: Message = {
+      ...message,
+      id: uuidv4(),
+      timestamp: Date.now(),
+    };
+    let updatedConversation: Conversation = {
+      ...currentConversation,
+      messages: [...currentConversation.messages, userMessage],
+      updatedAt: Date.now(),
+    };
+    await updateConversation(updatedConversation);
+
+    // 2. Add placeholder assistant message
+    const assistantMessage: Message = {
+      id: uuidv4(),
+      role: "assistant",
+      content: "",
+      timestamp: Date.now(),
+    };
+    updatedConversation = {
+      ...updatedConversation,
+      messages: [...updatedConversation.messages, assistantMessage],
+      updatedAt: Date.now(),
+    };
+    await updateConversation(updatedConversation);
+
+    // 3. Extract OpenAI params
+    const apiKey = settings.currentApiKey?.key;
+    const model = settings.selectedModel.id;
+    const temperature = updatedConversation.modelSettings.temperature;
+    const maxTokens = updatedConversation.modelSettings.maxTokens;
+    const messages = updatedConversation.messages
+      .map(({ role, content }) => ({ role, content }));
+    if (!apiKey) {
+      // Optionally update assistant message with error
+      assistantMessage.content = "No API key configured.";
+      await updateMessage(assistantMessage);
+      return;
+    }
+
+    // 4. Stream response and update assistant message in real time
+    try {
+      let fullContent = "";
+      for await (const delta of streamChatCompletion({
+        apiKey,
+        model,
+        temperature,
+        maxTokens,
+        messages,
+      })) {
+        fullContent += delta;
+        assistantMessage.content = fullContent;
+        // Update only the assistant message in the conversation
+        updatedConversation = {
+          ...updatedConversation,
+          messages: updatedConversation.messages.map((msg) =>
+            msg.id === assistantMessage.id ? { ...assistantMessage } : msg
+          ),
+          updatedAt: Date.now(),
+        };
+        await updateConversation(updatedConversation);
+      }
+    } catch (err) {
+      assistantMessage.content = "Error streaming response from OpenAI.";
+      updatedConversation = {
+        ...updatedConversation,
+        messages: updatedConversation.messages.map((msg) =>
+          msg.id === assistantMessage.id ? { ...assistantMessage } : msg
+        ),
+        updatedAt: Date.now(),
+      };
+      await updateConversation(updatedConversation);
+    }
+  };
+
   const value = {
     conversations,
     currentConversation,
@@ -236,6 +318,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     addMessage,
     updateMessage,
     deleteMessage,
+    sendMessageAndStream,
   };
 
   return (
