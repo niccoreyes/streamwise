@@ -366,7 +366,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ),
         updatedAt: Date.now(),
       });
-      for await (const delta of streamChatCompletion({
+      for await (const event of streamChatCompletion({
         apiKey,
         model,
         temperature,
@@ -375,19 +375,35 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ...(tools ? { tools } : {}),
         systemMessage: updatedConversation.systemMessage,
       })) {
-        fullContent += delta;
-        // Always create a new assistant message object to ensure React detects the change
-        const newAssistantMessage = { ...assistantMessage, content: fullContent };
-        setCurrentConversation((prev) => prev
-          ? {
-              ...prev,
-              messages: prev.messages.map((msg) =>
-                msg.id === assistantMessage.id ? newAssistantMessage : msg
-              ),
-              updatedAt: Date.now(),
-            }
-          : null
-        );
+        if (event.type === "final") {
+          // On "final", immediately set the assistant message to the full/final text
+          fullContent = event.text;
+          const newAssistantMessage = { ...assistantMessage, content: fullContent };
+          setCurrentConversation((prev) => prev
+            ? {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === assistantMessage.id ? newAssistantMessage : msg
+                ),
+                updatedAt: Date.now(),
+              }
+            : null
+          );
+        } else {
+          // Overwrite the previous content with the new state after each delta
+          fullContent += event.text;
+          const newAssistantMessage = { ...assistantMessage, content: fullContent };
+          setCurrentConversation((prev) => prev
+            ? {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === assistantMessage.id ? newAssistantMessage : msg
+                ),
+                updatedAt: Date.now(),
+              }
+            : null
+          );
+        }
       }
       // After streaming, persist the final assistant message
       updatedConversation = {

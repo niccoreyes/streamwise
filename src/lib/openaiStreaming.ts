@@ -35,10 +35,13 @@ export interface StreamOptions {
  * @param opts - StreamOptions including apiKey, model, temperature, maxTokens, and messages.
  * @param onResponseId - Optional callback to receive the response id for multi-turn conversations.
  */
+// StreamEvent type: { type: "delta" | "final", text: string }
+export type StreamEvent = { type: "delta" | "final", text: string };
+
 export async function* streamChatCompletion(
   opts: StreamOptions,
   onResponseId?: (responseId: string) => void
-): AsyncGenerator<string> {
+): AsyncGenerator<StreamEvent> {
   const client = new OpenAI({
     apiKey: opts.apiKey,
     dangerouslyAllowBrowser: true,
@@ -97,7 +100,7 @@ export async function* streamChatCompletion(
             text: (part as any).text || (part as any).value || "",
           };
         });
-      }
+   }
       return {
         role: m.role,
         content: contentArr,
@@ -154,29 +157,53 @@ export async function* streamChatCompletion(
        responseIdCaptured = true;
        if (onResponseId) onResponseId(chunk.response.id);
      }
-     // The streaming format for responses API is not always well-documented; fallback to output_text or text
-     // Robustly extract streaming content for all OpenAI event types
+     // Always yield deltas as they arrive, and yield "final" only at the end
+     let isFinal = false;
      let text = "";
      // Chat Completions API (OpenAI): choices[0].delta.content
      if (chunk && Array.isArray(chunk.choices) && chunk.choices[0]?.delta !== undefined) {
        text = chunk.choices[0].delta;
+       yield { type: "delta", text };
+       continue;
      }
-     // Responses API: delta or content
-     else if (chunk && chunk.delta !== undefined) {
+     // Responses API: delta.content or content
+     if (chunk && chunk.delta !== undefined) {
        text = chunk.delta;
+       yield { type: "delta", text };
+       continue;
      }
-     else if (chunk && chunk.content !== undefined) {
+     if (chunk && chunk.content !== undefined) {
        text = chunk.content;
+       yield { type: "delta", text };
+       continue;
      }
      // Fallbacks
-     else if ((chunk as any).output_text !== undefined) {
+     if ((chunk as any).output_text !== undefined) {
        text = (chunk as any).output_text;
+       yield { type: "delta", text };
+       continue;
      }
-     else if ((chunk as any).text !== undefined) {
+     if ((chunk as any).text !== undefined) {
        text = (chunk as any).text;
+       yield { type: "delta", text };
+       continue;
      }
-     console.debug("[openaiStreaming] text Stream:", chunk.delta);
-
-     yield text;
+     // Detect "done" events with full/final text
+     // OpenAI Responses API: response.output_text.done, response.content_part.done, response.completed
+     if (
+       (chunk && chunk.response?.output_text?.done !== undefined) ||
+       (chunk && chunk.response?.content_part?.done !== undefined) ||
+       (chunk && chunk.response?.completed !== undefined)
+     ) {
+       isFinal = true;
+       if (chunk.response?.output_text?.done !== undefined) {
+         text = chunk.response.output_text.done;
+       } else if (chunk.response?.content_part?.done !== undefined) {
+         text = chunk.response.content_part.done;
+       } else if (chunk.response?.completed !== undefined) {
+         text = chunk.response.completed;
+       }
+       yield { type: "final", text };
+     }
    }
  }
