@@ -46,18 +46,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     "openai"
   );
   const [showAddKey, setShowAddKey] = useState(false);
-  const [systemMessage, setSystemMessage] = useState("");
-  const [webSearchConfig, setWebSearchConfig] = useState({
-    enabled: false,
-    contextSize: "medium" as "low" | "medium" | "high",
-    location: {
-      type: "approximate" as const,
-      country: "",
-      city: "",
-      region: "",
-      timezone: "",
-    },
-  });
+  const { webSearchConfig, setWebSearchConfig, systemMessage, setSystemMessage } = useSettings();
 
   const handleSaveKey = async () => {
     if (newKeyName.trim() && newKeyValue.trim()) {
@@ -569,8 +558,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <h4 className="text-sm font-medium mb-3">System Message</h4>
             <Textarea
               placeholder="Describe desired model behavior (tone, tool usage, response style)"
-              value={currentConversation?.systemMessage ?? ""}
+              value={systemMessage}
               onChange={(e) => {
+                setSystemMessage(e.target.value);
                 if (!currentConversation) return;
                 const updatedConversation = {
                   ...currentConversation,

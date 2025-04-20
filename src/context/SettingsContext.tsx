@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
 import { LocalStorage } from '@/lib/localStorage';
 import { ApiKey, AIModel } from '@/types';
+import { chatDb } from '@/lib/chatDb';
 
 // Define available AI models
 const AVAILABLE_MODELS: AIModel[] = [
@@ -41,6 +42,18 @@ const AVAILABLE_MODELS: AIModel[] = [
   }
 ];
 
+type WebSearchConfig = {
+  enabled: boolean;
+  contextSize: "low" | "medium" | "high";
+  location: {
+    type: "approximate";
+    country: string;
+    city: string;
+    region: string;
+    timezone: string;
+  };
+};
+
 type SettingsContextType = {
   apiKeys: ApiKey[];
   currentApiKey: ApiKey | null;
@@ -50,6 +63,10 @@ type SettingsContextType = {
   deleteApiKey: (id: string) => Promise<void>;
   setCurrentApiKey: (id: string) => void;
   setSelectedModel: (modelId: string) => void;
+  webSearchConfig: WebSearchConfig;
+  setWebSearchConfig: (config: WebSearchConfig) => void;
+  systemMessage: string;
+  setSystemMessage: (msg: string) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -59,6 +76,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [currentApiKey, setCurrentApiKey] = useState<ApiKey | null>(null);
   const [availableModels] = useState<AIModel[]>(AVAILABLE_MODELS);
   const [selectedModel, setSelectedModel] = useState<AIModel>(AVAILABLE_MODELS[0]);
+  const [webSearchConfig, setWebSearchConfigState] = useState<WebSearchConfig>({
+    enabled: false,
+    contextSize: "medium",
+    location: {
+      type: "approximate",
+      country: "",
+      city: "",
+      region: "",
+      timezone: "",
+    },
+  });
+  const [systemMessage, setSystemMessageState] = useState<string>("");
 
   // Load API keys and settings on mount
   useEffect(() => {
@@ -92,6 +121,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setSelectedModel(model);
           }
         }
+
+        // Load web search config and system message from chatDb
+        const wsConfig = await chatDb.getSetting<WebSearchConfig>("webSearchConfig");
+        if (wsConfig) setWebSearchConfigState(wsConfig);
+        const sysMsg = await chatDb.getSetting<string>("systemMessage");
+        if (sysMsg !== undefined) setSystemMessageState(sysMsg);
+
       } catch (error) {
         console.error('Failed to load settings:', error);
       }
@@ -169,17 +205,35 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })();
     }
   };
+// Persist webSearchConfig and systemMessage to IndexedDB on change
+useEffect(() => {
+  chatDb.setSetting("webSearchConfig", webSearchConfig);
+}, [webSearchConfig]);
+useEffect(() => {
+  chatDb.setSetting("systemMessage", systemMessage);
+}, [systemMessage]);
 
-  const value = {
-    apiKeys,
-    currentApiKey,
-    availableModels,
-    selectedModel,
-    saveApiKey,
-    deleteApiKey,
-    setCurrentApiKey: handleSetCurrentApiKey,
-    setSelectedModel: handleSetSelectedModel,
-  };
+const setWebSearchConfig = (config: WebSearchConfig) => {
+  setWebSearchConfigState(config);
+};
+const setSystemMessage = (msg: string) => {
+  setSystemMessageState(msg);
+};
+
+const value = {
+  apiKeys,
+  currentApiKey,
+  availableModels,
+  selectedModel,
+  saveApiKey,
+  deleteApiKey,
+  setCurrentApiKey: handleSetCurrentApiKey,
+  setSelectedModel: handleSetSelectedModel,
+  webSearchConfig,
+  setWebSearchConfig,
+  systemMessage,
+  setSystemMessage,
+};
 
   return (
     <SettingsContext.Provider value={value}>
