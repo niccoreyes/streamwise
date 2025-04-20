@@ -211,7 +211,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const handleSetCurrentApiKey = async (id: string): void => {
+  const handleSetCurrentApiKey = async (id: string): Promise<void> => {
     const apiKey = apiKeys.find((key) => key.id === id);
     if (apiKey) {
       setCurrentApiKey(apiKey);

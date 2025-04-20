@@ -93,7 +93,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               rows={4}
-              className="min-w-[200px]"
+              className="min-w-[200px] text-black"
             />
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
