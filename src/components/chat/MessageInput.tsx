@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import type { MessageContentPart } from "@/types";
 
 export const MessageInput: React.FC = () => {
-  const { sendMessageAndStream } = useConversation();
+  const { sendMessageAndStream, addMessage } = useConversation();
   const [message, setMessage] = useState("");
   const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video"; file?: File | Blob } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,15 +130,18 @@ export const MessageInput: React.FC = () => {
     }
   };
 
-  // Instead of sending immediately, set the message and role, and close the dialog.
-  const handleInsertMessage = () => {
-    if (!manualMessage.trim()) return;
-
-    setMessage(manualMessage);
-    setMessageRole(messageRole);
-    setManualMessage("");
-    setShowInsertDialog(false);
-  };
+    // Insert a manual message and persist it to IndexedDB/UI without API call
+    const handleInsertMessage = async () => {
+      if (!manualMessage.trim()) return;
+  
+      await addMessage({
+        role: messageRole,
+        content: manualMessage,
+      });
+  
+      setManualMessage("");
+      setShowInsertDialog(false);
+    };
 
   return (
     <div className="p-4 border-t border-gray-200 dark:border-gray-800">
