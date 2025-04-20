@@ -50,8 +50,74 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           dbConversations = LocalStorage.getConversations();
         }
         
-        setConversations(dbConversations);
-        
+        // Ensure every conversation has a systemMessage and web search fields
+        let updated = false;
+        const defaultSystemMessage = settings.systemMessage || "";
+        const defaultWebSearchConfig = settings.webSearchConfig || {
+          enabled: false,
+          contextSize: "medium",
+          location: {
+            type: "approximate",
+            country: "",
+            city: "",
+            region: "",
+            timezone: "",
+          },
+        };
+        const fixedConversations = dbConversations.map(conv => {
+          let changed = false;
+          let newConv = { ...conv };
+
+          // Ensure systemMessage
+          if (typeof newConv.systemMessage === "undefined") {
+            newConv.systemMessage = defaultSystemMessage;
+            changed = true;
+          }
+
+          // Ensure webSearchEnabled
+          if (typeof newConv.webSearchEnabled === "undefined") {
+            newConv.webSearchEnabled = defaultWebSearchConfig.enabled;
+            changed = true;
+          }
+
+          // Ensure modelSettings.webSearchSettings
+          if (!newConv.modelSettings) newConv.modelSettings = { temperature: 0.7, maxTokens: 1000 };
+          if (typeof newConv.modelSettings.webSearchSettings === "undefined") {
+            newConv.modelSettings.webSearchSettings = {
+              contextSize: defaultWebSearchConfig.contextSize,
+              location: { ...defaultWebSearchConfig.location },
+            };
+            changed = true;
+          } else {
+            // Ensure all webSearchSettings fields
+            if (typeof newConv.modelSettings.webSearchSettings.contextSize === "undefined") {
+              newConv.modelSettings.webSearchSettings.contextSize = defaultWebSearchConfig.contextSize;
+              changed = true;
+            }
+            if (typeof newConv.modelSettings.webSearchSettings.location === "undefined") {
+              newConv.modelSettings.webSearchSettings.location = { ...defaultWebSearchConfig.location };
+              changed = true;
+            } else {
+              const loc = newConv.modelSettings.webSearchSettings.location;
+              for (const key of ["type", "country", "city", "region", "timezone"]) {
+                if (typeof loc[key] === "undefined") {
+                  loc[key] = defaultWebSearchConfig.location[key];
+                  changed = true;
+                }
+              }
+            }
+          }
+
+          if (changed) updated = true;
+          return newConv;
+        });
+        if (updated) {
+          for (const conv of fixedConversations) {
+            await saveConversationToStorage(conv);
+          }
+        }
+        setConversations(fixedConversations);
+
         // Load last active conversation if any
         const config = await db.getConfig();
         if (config?.activeConversationId) {
@@ -64,9 +130,9 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             console.error('Failed to load active conversation:', error);
           }
         }
-        
+
         // If no conversations exist, create a default one
-        if (dbConversations.length === 0) {
+        if (fixedConversations.length === 0) {
           const defaultConversation = await createNewConversation('gpt-4o', defaultModelSettings);
           setCurrentConversation(defaultConversation);
         }

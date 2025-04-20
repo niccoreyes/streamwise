@@ -47,12 +47,28 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   );
   const [showAddKey, setShowAddKey] = useState(false);
   const { webSearchConfig, setWebSearchConfig, systemMessage, setSystemMessage } = useSettings();
-  const [localSystemMessage, setLocalSystemMessage] = useState(systemMessage);
+  const [localSystemMessage, setLocalSystemMessage] = useState(currentConversation?.systemMessage ?? "");
 
-  // Sync local state with context when drawer opens
+  // Local state for web search fields
+  const [localWebSearchEnabled, setLocalWebSearchEnabled] = useState(currentConversation?.webSearchEnabled ?? false);
+  const [localContextSize, setLocalContextSize] = useState(currentConversation?.modelSettings?.webSearchSettings?.contextSize ?? "medium");
+  const [localCountry, setLocalCountry] = useState(currentConversation?.modelSettings?.webSearchSettings?.location?.country ?? "");
+  const [localCity, setLocalCity] = useState(currentConversation?.modelSettings?.webSearchSettings?.location?.city ?? "");
+  const [localRegion, setLocalRegion] = useState(currentConversation?.modelSettings?.webSearchSettings?.location?.region ?? "");
+  const [localTimezone, setLocalTimezone] = useState(currentConversation?.modelSettings?.webSearchSettings?.location?.timezone ?? "");
+
+  // Sync local state with currentConversation when drawer opens or conversation changes
   React.useEffect(() => {
-    if (isOpen) setLocalSystemMessage(systemMessage);
-  }, [isOpen, systemMessage]);
+    if (isOpen && currentConversation) {
+      setLocalSystemMessage(currentConversation.systemMessage ?? "");
+      setLocalWebSearchEnabled(currentConversation.webSearchEnabled ?? false);
+      setLocalContextSize(currentConversation.modelSettings?.webSearchSettings?.contextSize ?? "medium");
+      setLocalCountry(currentConversation.modelSettings?.webSearchSettings?.location?.country ?? "");
+      setLocalCity(currentConversation.modelSettings?.webSearchSettings?.location?.city ?? "");
+      setLocalRegion(currentConversation.modelSettings?.webSearchSettings?.location?.region ?? "");
+      setLocalTimezone(currentConversation.modelSettings?.webSearchSettings?.location?.timezone ?? "");
+    }
+  }, [isOpen, currentConversation]);
 
   // On drawer close, commit localSystemMessage to context/IndexedDB
   const handleDrawerClose = () => {
@@ -129,6 +145,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   };
 
   const handleWebSearchToggle = (enabled: boolean) => {
+    setLocalWebSearchEnabled(enabled);
     if (!currentConversation) return;
 
     const updatedConversation = {
@@ -137,17 +154,17 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       modelSettings: {
         ...currentConversation.modelSettings,
         webSearchSettings: enabled
-          ? currentConversation.modelSettings.webSearchSettings || {
-              contextSize: "medium",
+          ? {
+              contextSize: localContextSize,
               location: {
-                type: "approximate",
-                country: "",
-                city: "",
-                region: "",
-                timezone: "",
+                type: "approximate" as const,
+                country: localCountry,
+                city: localCity,
+                region: localRegion,
+                timezone: localTimezone,
               },
             }
-          : currentConversation.modelSettings.webSearchSettings,
+          : undefined,
       },
     };
 
@@ -165,20 +182,126 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     }
   };
 
-  const handleWebSearchSettingsChange = (settings: typeof webSearchConfig) => {
-    setWebSearchConfig(settings);
+  // Individual handlers for each web search field
+  const handleContextSizeChange = (value: "low" | "medium" | "high") => {
+    setLocalContextSize(value);
     if (currentConversation) {
       const updatedConversation = {
         ...currentConversation,
-        webSearchEnabled: settings.enabled,
         modelSettings: {
           ...currentConversation.modelSettings,
-          webSearchSettings: settings.enabled
-            ? {
-                contextSize: settings.contextSize,
-                location: settings.location,
-              }
-            : undefined,
+          webSearchSettings: {
+            ...currentConversation.modelSettings.webSearchSettings,
+            contextSize: value,
+            location: {
+              ...currentConversation.modelSettings.webSearchSettings?.location,
+              country: localCountry,
+              city: localCity,
+              region: localRegion,
+              timezone: localTimezone,
+              type: "approximate" as const,
+            },
+          },
+        },
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
+  const handleCountryChange = (value: string) => {
+    setLocalCountry(value);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        modelSettings: {
+          ...currentConversation.modelSettings,
+          webSearchSettings: {
+            ...currentConversation.modelSettings.webSearchSettings,
+            contextSize: localContextSize,
+            location: {
+              ...currentConversation.modelSettings.webSearchSettings?.location,
+              country: value,
+              city: localCity,
+              region: localRegion,
+              timezone: localTimezone,
+              type: "approximate" as const,
+            },
+          },
+        },
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
+  const handleCityChange = (value: string) => {
+    setLocalCity(value);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        modelSettings: {
+          ...currentConversation.modelSettings,
+          webSearchSettings: {
+            ...currentConversation.modelSettings.webSearchSettings,
+            contextSize: localContextSize,
+            location: {
+              ...currentConversation.modelSettings.webSearchSettings?.location,
+              country: localCountry,
+              city: value,
+              region: localRegion,
+              timezone: localTimezone,
+              type: "approximate" as const,
+            },
+          },
+        },
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
+  const handleRegionChange = (value: string) => {
+    setLocalRegion(value);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        modelSettings: {
+          ...currentConversation.modelSettings,
+          webSearchSettings: {
+            ...currentConversation.modelSettings.webSearchSettings,
+            contextSize: localContextSize,
+            location: {
+              ...currentConversation.modelSettings.webSearchSettings?.location,
+              country: localCountry,
+              city: localCity,
+              region: value,
+              timezone: localTimezone,
+              type: "approximate" as const,
+            },
+          },
+        },
+      };
+      updateConversation(updatedConversation);
+    }
+  };
+
+  const handleTimezoneChange = (value: string) => {
+    setLocalTimezone(value);
+    if (currentConversation) {
+      const updatedConversation = {
+        ...currentConversation,
+        modelSettings: {
+          ...currentConversation.modelSettings,
+          webSearchSettings: {
+            ...currentConversation.modelSettings.webSearchSettings,
+            contextSize: localContextSize,
+            location: {
+              ...currentConversation.modelSettings.webSearchSettings?.location,
+              country: localCountry,
+              city: localCity,
+              region: localRegion,
+              timezone: value,
+              type: "approximate" as const,
+            },
+          },
         },
       };
       updateConversation(updatedConversation);
@@ -468,28 +591,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   <Label htmlFor="webSearchEnabled">Enable web search</Label>
                   <Switch
                     id="webSearchEnabled"
-                    checked={webSearchConfig.enabled}
-                    onCheckedChange={(enabled) =>
-                      handleWebSearchSettingsChange({
-                        ...webSearchConfig,
-                        enabled,
-                      })
-                    }
+                    checked={localWebSearchEnabled}
+                    onCheckedChange={handleWebSearchToggle}
                   />
                 </div>
 
-                {webSearchConfig.enabled && (
+                {localWebSearchEnabled && (
                   <>
                     <div className="space-y-2">
                       <Label>Search Context Size</Label>
                       <Select
-                        value={webSearchConfig.contextSize}
-                        onValueChange={(value: "low" | "medium" | "high") =>
-                          handleWebSearchSettingsChange({
-                            ...webSearchConfig,
-                            contextSize: value,
-                          })
-                        }
+                        value={localContextSize}
+                        onValueChange={handleContextSizeChange}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -511,57 +624,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       <div className="grid gap-2">
                         <Input
                           placeholder="Country (e.g., US, GB)"
-                          value={webSearchConfig.location.country}
-                          onChange={(e) =>
-                            handleWebSearchSettingsChange({
-                              ...webSearchConfig,
-                              location: {
-                                ...webSearchConfig.location,
-                                country: e.target.value,
-                              },
-                            })
-                          }
+                          value={localCountry}
+                          onChange={(e) => handleCountryChange(e.target.value)}
                           maxLength={2}
                           className="uppercase"
                         />
                         <Input
                           placeholder="City"
-                          value={webSearchConfig.location.city}
-                          onChange={(e) =>
-                            handleWebSearchSettingsChange({
-                              ...webSearchConfig,
-                              location: {
-                                ...webSearchConfig.location,
-                                city: e.target.value,
-                              },
-                            })
-                          }
+                          value={localCity}
+                          onChange={(e) => handleCityChange(e.target.value)}
                         />
                         <Input
                           placeholder="Region/State"
-                          value={webSearchConfig.location.region}
-                          onChange={(e) =>
-                            handleWebSearchSettingsChange({
-                              ...webSearchConfig,
-                              location: {
-                                ...webSearchConfig.location,
-                                region: e.target.value,
-                              },
-                            })
-                          }
+                          value={localRegion}
+                          onChange={(e) => handleRegionChange(e.target.value)}
                         />
                         <Input
                           placeholder="Timezone (e.g., America/New_York)"
-                          value={webSearchConfig.location.timezone}
-                          onChange={(e) =>
-                            handleWebSearchSettingsChange({
-                              ...webSearchConfig,
-                              location: {
-                                ...webSearchConfig.location,
-                                timezone: e.target.value,
-                              },
-                            })
-                          }
+                          value={localTimezone}
+                          onChange={(e) => handleTimezoneChange(e.target.value)}
                         />
                       </div>
                     </div>

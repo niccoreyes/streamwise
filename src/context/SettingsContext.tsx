@@ -9,11 +9,59 @@ import { chatDb } from '@/lib/chatDb';
 // Define available AI models
 const AVAILABLE_MODELS: AIModel[] = [
   {
+    id: 'gpt-4.1',
+    name: 'GPT-4.1',
+    description: 'OpenAI\'s latest model with a 1,000,000 token context window.',
+    supportsWebSearch: true,
+    maxTokens: 1000000,
+    defaultTemperature: 0.7,
+  },
+  {
+    id: 'gpt-4.1-mini',
+    name: 'GPT-4.1 Mini',
+    description: 'Smaller version of GPT-4.1 with a 256,000 token context window.',
+    supportsWebSearch: true,
+    maxTokens: 256000,
+    defaultTemperature: 0.7,
+  },
+  {
+    id: 'gpt-4.1-nano',
+    name: 'GPT-4.1 Nano',
+    description: 'Fast and cost-effective nano version of GPT-4.1 with a 128,000 token context window.',
+    supportsWebSearch: false,
+    maxTokens: 128000,
+    defaultTemperature: 0.7,
+  },
+  {
+    id: 'o4-mini',
+    name: 'o4-mini',
+    description: 'OpenAI\'s o4-mini model with a 128,000 token context window.',
+    supportsWebSearch: true,
+    maxTokens: 128000,
+    defaultTemperature: 0.7,
+  },
+  {
+    id: 'o3',
+    name: 'o3',
+    description: 'OpenAI\'s base reasoning model with a 4,096 token context window.',
+    supportsWebSearch: true,
+    maxTokens: 4096,
+    defaultTemperature: 0.7,
+  },
+  {
+    id: 'o3-mini',
+    name: 'o3-mini',
+    description: 'OpenAI\'s o3-mini model with a 16,384 token context window.',
+    supportsWebSearch: false,
+    maxTokens: 16384,
+    defaultTemperature: 0.7,
+  },
+  {
     id: 'gpt-4o',
     name: 'GPT-4o',
     description: 'OpenAI\'s latest and most capable multimodal model.',
     supportsWebSearch: true,
-    maxTokens: 4096,
+    maxTokens: 16384,
     defaultTemperature: 0.7,
   },
   {
@@ -21,7 +69,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     name: 'GPT-4o Mini',
     description: 'Smaller, faster, and more cost-effective model.',
     supportsWebSearch: true,
-    maxTokens: 4096,
+    maxTokens: 16384,
     defaultTemperature: 0.7,
   },
   {
@@ -219,7 +267,6 @@ const setWebSearchConfig = (config: WebSearchConfig) => {
 const setSystemMessage = (msg: string) => {
   setSystemMessageState(msg);
   chatDb.setSetting("systemMessage", msg);
-  console.debug("[SettingsContext] System Message: ", msg)
 };
 
 const value = {
