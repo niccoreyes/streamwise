@@ -150,20 +150,23 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const handleSetSelectedModel = async (modelId: string): Promise<void> => {
+  // Make setSelectedModel synchronous for state, persist config in background
+  const handleSetSelectedModel = (modelId: string): void => {
     const model = availableModels.find((m) => m.id === modelId);
     if (model) {
       setSelectedModel(model);
-      
-      try {
-        const config = await db.getConfig();
-        if (config) {
-          config.defaultModelId = modelId;
-          await db.saveConfig(config);
+      // Persist to IndexedDB in background, but do not await
+      (async () => {
+        try {
+          const config = await db.getConfig();
+          if (config) {
+            config.defaultModelId = modelId;
+            await db.saveConfig(config);
+          }
+        } catch (error) {
+          console.error('Failed to update default model in config:', error);
         }
-      } catch (error) {
-        console.error('Failed to update default model in config:', error);
-      }
+      })();
     }
   };
 

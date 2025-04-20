@@ -101,14 +101,12 @@ export const MessageInput: React.FC = () => {
     }
   };
 
-  const handleInsertMessage = async () => {
+  // Instead of sending immediately, set the message and role, and close the dialog.
+  const handleInsertMessage = () => {
     if (!manualMessage.trim()) return;
 
-    await sendMessageAndStream({
-      role: messageRole,
-      content: manualMessage,
-    });
-
+    setMessage(manualMessage);
+    setMessageRole(messageRole);
     setManualMessage("");
     setShowInsertDialog(false);
   };

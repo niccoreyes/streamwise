@@ -260,7 +260,8 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // 3. Extract OpenAI params
     const apiKey = settings.currentApiKey?.key;
-    const model = settings.selectedModel.id;
+    // Use the modelId from the current conversation, not the global selectedModel
+    const model = updatedConversation.modelId;
     const temperature = updatedConversation.modelSettings.temperature;
     const maxTokens = updatedConversation.modelSettings.maxTokens;
     const messages = updatedConversation.messages

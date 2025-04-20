@@ -64,9 +64,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     }
   };
 
-  const handleModelChange = (modelId: string) => {
-    setSelectedModel(modelId);
-    
+  const handleModelChange = async (modelId: string) => {
+    await setSelectedModel(modelId);
+
     if (currentConversation) {
       const model = availableModels.find(m => m.id === modelId);
       if (model) {
@@ -79,7 +79,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             maxTokens: model.maxTokens,
           },
         };
-        updateConversation(updatedConversation);
+        await updateConversation(updatedConversation);
       }
     }
   };
