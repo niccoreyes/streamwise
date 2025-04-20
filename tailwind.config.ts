@@ -52,6 +52,19 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+                streamwise: {
+                    50: '#f3f1ff',
+                    100: '#e9e6ff',
+                    200: '#d8d1ff',
+                    300: '#bfb0ff',
+                    400: '#a184ff',
+                    500: '#8b5cf6',
+                    600: '#7e37ed',
+                    700: '#6d28d9',
+                    800: '#5b21b6',
+                    900: '#4c1d95',
+                    950: '#2e0e67',
+                },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
