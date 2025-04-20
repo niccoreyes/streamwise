@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
@@ -6,7 +5,6 @@ import { LocalStorage } from '@/lib/localStorage';
 import { ApiKey, AIModel } from '@/types';
 import { chatDb } from '@/lib/chatDb';
 
-// Define available AI models
 const AVAILABLE_MODELS: AIModel[] = [
   {
     id: 'gpt-4.1',
@@ -137,11 +135,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   const [systemMessage, setSystemMessageState] = useState<string>("");
 
-  // Load API keys and settings on mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // Try to load from IndexedDB first
         let dbApiKeys: ApiKey[] = [];
         try {
           dbApiKeys = await db.getApiKeys();
@@ -149,19 +145,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Failed to load API keys from IndexedDB:', error);
         }
         
-        // If IndexedDB fails, fall back to localStorage
         if (dbApiKeys.length === 0) {
           dbApiKeys = LocalStorage.getApiKeys();
         }
         
         setApiKeys(dbApiKeys);
         
-        // Set current API key to first one if exists
         if (dbApiKeys.length > 0) {
           setCurrentApiKey(dbApiKeys[0]);
         }
         
-        // Load preferred model from config
         const config = await db.getConfig();
         if (config?.defaultModelId) {
           const model = availableModels.find(m => m.id === config.defaultModelId);
@@ -170,7 +163,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
         }
 
-        // Load web search config and system message from chatDb
         const wsConfig = await chatDb.getSetting<WebSearchConfig>("webSearchConfig");
         if (wsConfig) setWebSearchConfigState(wsConfig);
         const sysMsg = await chatDb.getSetting<string>("systemMessage");
@@ -192,54 +184,49 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     
     try {
-      // Save to IndexedDB
       await db.saveApiKey(newApiKey);
+      await chatDb.setSetting("currentApiKey", newApiKey);
     } catch (error) {
-      console.error('Failed to save API key to IndexedDB:', error);
-      // Fall back to localStorage
+      console.error('Failed to save API key:', error);
       LocalStorage.saveApiKey(newApiKey);
     }
     
     setApiKeys((prevApiKeys) => [...prevApiKeys, newApiKey]);
-    
-    // If this is the first key, set it as current
-    if (apiKeys.length === 0) {
-      setCurrentApiKey(newApiKey);
-    }
+    setCurrentApiKey(newApiKey);
   };
 
   const deleteApiKey = async (id: string): Promise<void> => {
     try {
-      // Delete from IndexedDB
       await db.deleteApiKey(id);
     } catch (error) {
       console.error('Failed to delete API key from IndexedDB:', error);
-      // Fall back to localStorage
       LocalStorage.deleteApiKey(id);
     }
     
     setApiKeys((prevApiKeys) => prevApiKeys.filter((key) => key.id !== id));
     
-    // If current key is deleted, set to null or first available
     if (currentApiKey?.id === id) {
       const remainingKeys = apiKeys.filter((key) => key.id !== id);
       setCurrentApiKey(remainingKeys.length > 0 ? remainingKeys[0] : null);
     }
   };
 
-  const handleSetCurrentApiKey = (id: string): void => {
+  const handleSetCurrentApiKey = async (id: string): void => {
     const apiKey = apiKeys.find((key) => key.id === id);
     if (apiKey) {
       setCurrentApiKey(apiKey);
+      try {
+        await chatDb.setSetting("currentApiKey", apiKey);
+      } catch (error) {
+        console.error('Failed to sync current API key:', error);
+      }
     }
   };
 
-  // Make setSelectedModel synchronous for state, persist config in background
   const handleSetSelectedModel = (modelId: string): void => {
     const model = availableModels.find((m) => m.id === modelId);
     if (model) {
       setSelectedModel(model);
-      // Persist to IndexedDB in background, but do not await
       (async () => {
         try {
           const config = await db.getConfig();
@@ -253,36 +240,36 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })();
     }
   };
-// Persist webSearchConfig and systemMessage to IndexedDB on change
-useEffect(() => {
-  chatDb.setSetting("webSearchConfig", webSearchConfig);
-}, [webSearchConfig]);
-useEffect(() => {
-  chatDb.setSetting("systemMessage", systemMessage);
-}, [systemMessage]);
 
-const setWebSearchConfig = (config: WebSearchConfig) => {
-  setWebSearchConfigState(config);
-};
-const setSystemMessage = (msg: string) => {
-  setSystemMessageState(msg);
-  chatDb.setSetting("systemMessage", msg);
-};
+  useEffect(() => {
+    chatDb.setSetting("webSearchConfig", webSearchConfig);
+  }, [webSearchConfig]);
+  useEffect(() => {
+    chatDb.setSetting("systemMessage", systemMessage);
+  }, [systemMessage]);
 
-const value = {
-  apiKeys,
-  currentApiKey,
-  availableModels,
-  selectedModel,
-  saveApiKey,
-  deleteApiKey,
-  setCurrentApiKey: handleSetCurrentApiKey,
-  setSelectedModel: handleSetSelectedModel,
-  webSearchConfig,
-  setWebSearchConfig,
-  systemMessage,
-  setSystemMessage,
-};
+  const setWebSearchConfig = (config: WebSearchConfig) => {
+    setWebSearchConfigState(config);
+  };
+  const setSystemMessage = (msg: string) => {
+    setSystemMessageState(msg);
+    chatDb.setSetting("systemMessage", msg);
+  };
+
+  const value = {
+    apiKeys,
+    currentApiKey,
+    availableModels,
+    selectedModel,
+    saveApiKey,
+    deleteApiKey,
+    setCurrentApiKey: handleSetCurrentApiKey,
+    setSelectedModel: handleSetSelectedModel,
+    webSearchConfig,
+    setWebSearchConfig,
+    systemMessage,
+    setSystemMessage,
+  };
 
   return (
     <SettingsContext.Provider value={value}>

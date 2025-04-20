@@ -1,9 +1,16 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Message } from "@/types";
 import ReactMarkdown from "react-markdown";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Trash2, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useConversation } from "@/context/ConversationContext";
 import type { MessageContentPart } from "@/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ChatMessageProps {
   message: Message;
@@ -53,12 +60,48 @@ function useBase64ToBlobUrls(content: MessageContentPart[] | string): (string | 
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+  const { deleteMessage, updateMessage } = useConversation();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(typeof message.content === "string" ? message.content : "");
   const isUser = message.role === "user";
   const contentArr = Array.isArray(message.content) ? message.content : null;
   const blobUrls = useBase64ToBlobUrls(message.content);
 
+  const handleDelete = async () => {
+    await deleteMessage(message.id);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedContent(typeof message.content === "string" ? message.content : "");
+  };
+
+  const handleSaveEdit = async () => {
+    await updateMessage({
+      ...message,
+      content: editedContent,
+    });
+    setIsEditing(false);
+  };
+
   function renderContent(content: string | MessageContentPart[]): React.ReactNode {
     if (typeof content === "string") {
+      if (isEditing) {
+        return (
+          <div className="flex flex-col gap-2">
+            <Textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              rows={4}
+              className="min-w-[200px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button onClick={handleSaveEdit}>Save</Button>
+            </div>
+          </div>
+        );
+      }
       return <ReactMarkdown>{content}</ReactMarkdown>;
     }
     return content.map((part, idx) => {
@@ -89,7 +132,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div
       className={cn(
-        "flex w-full mb-4 animate-fade-in",
+        "flex w-full mb-4 animate-fade-in group",
         isUser ? "justify-end" : "justify-start"
       )}
     >
@@ -108,21 +151,48 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <span>{isUser ? "You" : "AI"}</span>
         </Avatar>
 
-        <div
-          className={cn(
-            "px-4 py-2 rounded-lg",
-            isUser
-              ? "bg-streamwise-500 text-white"
-              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-          )}
-        >
+        <div className="relative group">
+          <div
+            className={cn(
+              "px-4 py-2 rounded-lg",
+              isUser
+                ? "bg-streamwise-500 text-white"
+                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+            )}
+          >
+            <div className={cn(
+              "prose prose-sm max-w-none",
+              isUser 
+                ? "prose-invert" 
+                : "prose-gray dark:prose-invert"
+            )}>
+              {renderContent(message.content)}
+            </div>
+          </div>
+
+          {/* Edit/Delete buttons */}
           <div className={cn(
-            "prose prose-sm max-w-none",
-            isUser 
-              ? "prose-invert" 
-              : "prose-gray dark:prose-invert"
+            "absolute top-2 opacity-0 group-hover:opacity-100 transition-opacity",
+            isUser ? "-left-20" : "-right-20"
           )}>
-            {renderContent(message.content)}
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleEdit}
+                className="h-8 w-8"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleDelete}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
