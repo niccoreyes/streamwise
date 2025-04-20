@@ -142,7 +142,7 @@ export async function* streamChatCompletion(
  
    // Debug log: Output the payload being sent to OpenAI
   //  console.debug("[openaiStreaming] OpenAI responses.create payload:", JSON.stringify(payload, null, 2));
-   console.debug("[openaiStreaming] instructions:", payload.systemMessage);
+  //  console.debug("[openaiStreaming] instructions:", payload.systemMessage);
    // Use the OpenAI SDK's responses.create for streaming
    const stream = await (client as any).responses.create(payload);
  
@@ -155,9 +155,28 @@ export async function* streamChatCompletion(
        if (onResponseId) onResponseId(chunk.response.id);
      }
      // The streaming format for responses API is not always well-documented; fallback to output_text or text
-     const text = (chunk as any).output_text || (chunk as any).text || "";
-     if (text) {
-       yield text;
+     // Robustly extract streaming content for all OpenAI event types
+     let text = "";
+     // Chat Completions API (OpenAI): choices[0].delta.content
+     if (chunk && Array.isArray(chunk.choices) && chunk.choices[0]?.delta !== undefined) {
+       text = chunk.choices[0].delta;
      }
+     // Responses API: delta or content
+     else if (chunk && chunk.delta !== undefined) {
+       text = chunk.delta;
+     }
+     else if (chunk && chunk.content !== undefined) {
+       text = chunk.content;
+     }
+     // Fallbacks
+     else if ((chunk as any).output_text !== undefined) {
+       text = (chunk as any).output_text;
+     }
+     else if ((chunk as any).text !== undefined) {
+       text = (chunk as any).text;
+     }
+     console.debug("[openaiStreaming] text Stream:", chunk.delta);
+
+     yield text;
    }
  }

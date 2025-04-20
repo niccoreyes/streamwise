@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         <div className="p-4 text-xs text-center text-gray-500 dark:text-gray-400">
           StreamWise AI Chat
-          <div className="mt-1">© 2023</div>
+          <div className="mt-1">© 2025</div>
         </div>
       </div>
     </div>

@@ -310,7 +310,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
     await updateConversation(updatedConversation);
 
-    // 2. Add placeholder assistant message
+    // 2. Add placeholder assistant message (in-memory only for streaming)
     const assistantMessage: Message = {
       id: uuidv4(),
       role: "assistant",
@@ -322,7 +322,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       messages: [...updatedConversation.messages, assistantMessage],
       updatedAt: Date.now(),
     };
-    await updateConversation(updatedConversation);
+    // Do NOT persist yet; will persist after streaming
 
     // 3. Extract OpenAI params
     const apiKey = settings.currentApiKey?.key;
@@ -335,11 +335,18 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!apiKey) {
       // Optionally update assistant message with error
       assistantMessage.content = "No API key configured.";
-      await updateMessage(assistantMessage);
+      updatedConversation = {
+        ...updatedConversation,
+        messages: updatedConversation.messages.map((msg) =>
+          msg.id === assistantMessage.id ? { ...assistantMessage } : msg
+        ),
+        updatedAt: Date.now(),
+      };
+      await updateConversation(updatedConversation);
       return;
     }
 
-    // 4. Stream response and update assistant message in real time
+    // 4. Stream response and update assistant message in real time (in-memory)
     try {
       // Determine if web search should be enabled for this request
       const modelObj = settings.availableModels.find(m => m.id === model);
@@ -351,6 +358,14 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const tools = enableWebSearch ? [{ type: "web_search_preview" }] : undefined;
 
       let fullContent = "";
+      // Use a local state update for streaming
+      setCurrentConversation({
+        ...updatedConversation,
+        messages: updatedConversation.messages.map((msg) =>
+          msg.id === assistantMessage.id ? { ...assistantMessage } : msg
+        ),
+        updatedAt: Date.now(),
+      });
       for await (const delta of streamChatCompletion({
         apiKey,
         model,
@@ -361,17 +376,28 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         systemMessage: updatedConversation.systemMessage,
       })) {
         fullContent += delta;
-        assistantMessage.content = fullContent;
-        // Update only the assistant message in the conversation
-        updatedConversation = {
-          ...updatedConversation,
-          messages: updatedConversation.messages.map((msg) =>
-            msg.id === assistantMessage.id ? { ...assistantMessage } : msg
-          ),
-          updatedAt: Date.now(),
-        };
-        await updateConversation(updatedConversation);
+        // Always create a new assistant message object to ensure React detects the change
+        const newAssistantMessage = { ...assistantMessage, content: fullContent };
+        setCurrentConversation((prev) => prev
+          ? {
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === assistantMessage.id ? newAssistantMessage : msg
+              ),
+              updatedAt: Date.now(),
+            }
+          : null
+        );
       }
+      // After streaming, persist the final assistant message
+      updatedConversation = {
+        ...updatedConversation,
+        messages: updatedConversation.messages.map((msg) =>
+          msg.id === assistantMessage.id ? { ...assistantMessage, content: fullContent } : msg
+        ),
+        updatedAt: Date.now(),
+      };
+      await updateConversation(updatedConversation);
     } catch (err) {
       assistantMessage.content = "Error streaming response from OpenAI.";
       updatedConversation = {
