@@ -10,33 +10,41 @@ import { useSettings } from "@/context/SettingsContext";
 import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 interface SettingsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ 
+export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { 
-    apiKeys, 
-    currentApiKey, 
-    saveApiKey, 
-    deleteApiKey, 
+  const {
+    apiKeys,
+    currentApiKey,
+    saveApiKey,
+    deleteApiKey,
     setCurrentApiKey,
     availableModels,
     selectedModel,
-    setSelectedModel
+    setSelectedModel,
   } = useSettings();
 
   const { currentConversation, updateConversation } = useConversation();
-  
+
   const [newKeyName, setNewKeyName] = useState("");
   const [newKeyValue, setNewKeyValue] = useState("");
-  const [newKeyProvider, setNewKeyProvider] = useState<"openai" | "custom">("openai");
+  const [newKeyProvider, setNewKeyProvider] = useState<"openai" | "custom">(
+    "openai"
+  );
   const [showAddKey, setShowAddKey] = useState(false);
   const [systemMessage, setSystemMessage] = useState("");
   const [webSearchConfig, setWebSearchConfig] = useState({
@@ -68,7 +76,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     await setSelectedModel(modelId);
 
     if (currentConversation) {
-      const model = availableModels.find(m => m.id === modelId);
+      const model = availableModels.find((m) => m.id === modelId);
       if (model) {
         const updatedConversation = {
           ...currentConversation,
@@ -86,7 +94,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
   const handleTemperatureChange = (value: number) => {
     if (!currentConversation) return;
-    
+
     const updatedConversation = {
       ...currentConversation,
       modelSettings: {
@@ -94,13 +102,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         temperature: value,
       },
     };
-    
+
     updateConversation(updatedConversation);
   };
 
   const handleMaxTokensChange = (value: number) => {
     if (!currentConversation) return;
-    
+
     const updatedConversation = {
       ...currentConversation,
       modelSettings: {
@@ -108,13 +116,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         maxTokens: value,
       },
     };
-    
+
     updateConversation(updatedConversation);
   };
 
   const handleWebSearchToggle = (enabled: boolean) => {
     if (!currentConversation) return;
-    
+
     const updatedConversation = {
       ...currentConversation,
       webSearchEnabled: enabled,
@@ -134,7 +142,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           : currentConversation.modelSettings.webSearchSettings,
       },
     };
-    
+
     updateConversation(updatedConversation);
   };
 
@@ -157,10 +165,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         webSearchEnabled: settings.enabled,
         modelSettings: {
           ...currentConversation.modelSettings,
-          webSearchSettings: settings.enabled ? {
-            contextSize: settings.contextSize,
-            location: settings.location,
-          } : undefined,
+          webSearchSettings: settings.enabled
+            ? {
+                contextSize: settings.contextSize,
+                location: settings.location,
+              }
+            : undefined,
         },
       };
       updateConversation(updatedConversation);
@@ -176,7 +186,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         )}
         onClick={onClose}
       />
-      
+
       <div
         className={cn(
           "fixed top-0 bottom-0 right-0 z-50 w-full sm:w-96 bg-white dark:bg-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out overflow-y-auto",
@@ -189,19 +199,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <X className="h-5 w-5" />
           </Button>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div>
             <h4 className="text-sm font-medium mb-3">API Keys</h4>
-            
+
             {apiKeys.length === 0 && !showAddKey ? (
               <div className="text-center py-6 border rounded-md border-dashed border-gray-300 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                   No API keys added yet
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setShowAddKey(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
@@ -211,9 +221,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             ) : (
               <>
                 {!showAddKey && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="mb-3"
                     onClick={() => setShowAddKey(true)}
                   >
@@ -221,7 +231,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     Add API Key
                   </Button>
                 )}
-                
+
                 {showAddKey && (
                   <div className="p-3 border rounded-md border-gray-200 dark:border-gray-800 mb-3 space-y-2">
                     <div className="space-y-2">
@@ -233,7 +243,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         placeholder="e.g. Personal OpenAI Key"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="keyValue">API Key</Label>
                       <Input
@@ -244,13 +254,15 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         placeholder="sk-..."
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Provider</Label>
                       <RadioGroup
                         defaultValue="openai"
                         value={newKeyProvider}
-                        onValueChange={(value) => setNewKeyProvider(value as "openai" | "custom")}
+                        onValueChange={(value) =>
+                          setNewKeyProvider(value as "openai" | "custom")
+                        }
                         className="flex space-x-2"
                       >
                         <div className="flex items-center space-x-1">
@@ -263,17 +275,17 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         </div>
                       </RadioGroup>
                     </div>
-                    
+
                     <div className="flex space-x-2 pt-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setShowAddKey(false)}
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        variant="default" 
+                      <Button
+                        variant="default"
                         size="sm"
                         className="bg-streamwise-500 hover:bg-streamwise-600"
                         onClick={handleSaveKey}
@@ -283,7 +295,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {apiKeys.map((key) => (
                   <div
                     key={key.id}
@@ -297,7 +309,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <div>
                       <p className="font-medium text-sm">{key.name}</p>
                       <p className="text-xs text-gray-500">
-                        {key.provider === "openai" ? "OpenAI" : "Custom Provider"}
+                        {key.provider === "openai"
+                          ? "OpenAI"
+                          : "Custom Provider"}
                       </p>
                     </div>
                     <div className="flex space-x-1">
@@ -329,7 +343,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           </div>
 
           <Separator />
-          
+
           <div>
             <h4 className="text-sm font-medium mb-3">AI Model</h4>
             <RadioGroup
@@ -348,9 +362,16 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   )}
                   onClick={() => handleModelChange(model.id)}
                 >
-                  <RadioGroupItem value={model.id} id={model.id} className="mr-3" />
+                  <RadioGroupItem
+                    value={model.id}
+                    id={model.id}
+                    className="mr-3"
+                  />
                   <div className="flex-grow">
-                    <Label htmlFor={model.id} className="font-medium cursor-pointer">
+                    <Label
+                      htmlFor={model.id}
+                      className="font-medium cursor-pointer"
+                    >
                       {model.name}
                     </Label>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -368,15 +389,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           </div>
 
           <Separator />
-          
+
           {currentConversation && (
             <div>
               <h4 className="text-sm font-medium mb-3">Model Parameters</h4>
-              
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="temperature">Temperature: {currentConversation.modelSettings.temperature.toFixed(1)}</Label>
+                    <Label htmlFor="temperature">
+                      Temperature:{" "}
+                      {currentConversation.modelSettings.temperature.toFixed(1)}
+                    </Label>
                   </div>
                   <input
                     id="temperature"
@@ -385,7 +409,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     max="1"
                     step="0.1"
                     value={currentConversation.modelSettings.temperature}
-                    onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      handleTemperatureChange(parseFloat(e.target.value))
+                    }
                     className="w-full accent-streamwise-500"
                   />
                   <div className="flex justify-between text-xs text-gray-500">
@@ -393,10 +419,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <span>Creative</span>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label htmlFor="maxTokens">Max Tokens: {currentConversation.modelSettings.maxTokens}</Label>
+                    <Label htmlFor="maxTokens">
+                      Max Tokens: {currentConversation.modelSettings.maxTokens}
+                    </Label>
                   </div>
                   <input
                     id="maxTokens"
@@ -405,7 +433,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     max={selectedModel.maxTokens}
                     step="256"
                     value={currentConversation.modelSettings.maxTokens}
-                    onChange={(e) => handleMaxTokensChange(parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleMaxTokensChange(parseInt(e.target.value))
+                    }
                     className="w-full accent-streamwise-500"
                   />
                   <div className="flex justify-between text-xs text-gray-500">
@@ -418,125 +448,35 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           )}
 
           <Separator />
-          
+
           {currentConversation && selectedModel.supportsWebSearch && (
             <div>
-              <h4 className="text-sm font-medium mb-3">Web Search</h4>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="webSearch" className="cursor-pointer">
-                  Enable web search
-                </Label>
-                <Switch
-                  id="webSearch"
-                  checked={currentConversation.webSearchEnabled}
-                  onCheckedChange={handleWebSearchToggle}
-                />
-              </div>
-              
-              {currentConversation.webSearchEnabled && (
-                <div className="mt-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contextSize">Context size</Label>
-                    <select
-                      id="contextSize"
-                      className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
-                      value={currentConversation.modelSettings.webSearchSettings?.contextSize || "medium"}
-                      onChange={(e) => {
-                        if (!currentConversation?.modelSettings?.webSearchSettings) return;
+              <h4 className="text-sm font-medium mb-3">
+                Web Search Configuration
+              </h4>
 
-                        const updatedConversation = {
-                          ...currentConversation,
-                          modelSettings: {
-                            ...currentConversation.modelSettings,
-                            webSearchSettings: {
-                              ...currentConversation.modelSettings.webSearchSettings,
-                              contextSize: e.target.value as "low" | "medium" | "high",
-                            },
-                          },
-                        };
-
-                        updateConversation(updatedConversation);
-                      }}
-                    >
-                      {["low", "medium", "high"].map((size) => (
-                        <option key={size} value={size}>
-                          {size.charAt(0).toUpperCase() + size.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
-                    <Input
-                      id="region"
-                      placeholder="United States"
-                      value={currentConversation.modelSettings.webSearchSettings?.location?.region || ""}
-                      onChange={(e) => {
-                        if (!currentConversation?.modelSettings?.webSearchSettings) return;
-
-                        const updatedConversation = {
-                          ...currentConversation,
-                          modelSettings: {
-                            ...currentConversation.modelSettings,
-                            webSearchSettings: {
-                              ...currentConversation.modelSettings.webSearchSettings,
-                              location: {
-                                ...currentConversation.modelSettings.webSearchSettings.location,
-                                region: e.target.value,
-                              },
-                            },
-                          },
-                        };
-
-                        updateConversation(updatedConversation);
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <Separator />
-          
-          <div>
-            <h4 className="text-sm font-medium mb-3">System Message</h4>
-            <Textarea
-              placeholder="Describe desired model behavior (tone, tool usage, response style)"
-              value={systemMessage}
-              onChange={(e) => handleSystemMessageChange(e.target.value)}
-              className="min-h-[150px] resize-y"
-            />
-          </div>
-
-          <Separator />
-          
-          {currentConversation && selectedModel.supportsWebSearch && (
-            <div>
-              <h4 className="text-sm font-medium mb-3">Web Search Configuration</h4>
-              
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="webSearchEnabled">Enable web search</Label>
                   <Switch
                     id="webSearchEnabled"
                     checked={webSearchConfig.enabled}
-                    onCheckedChange={(enabled) => handleWebSearchSettingsChange({
-                      ...webSearchConfig,
-                      enabled,
-                    })}
+                    onCheckedChange={(enabled) =>
+                      handleWebSearchSettingsChange({
+                        ...webSearchConfig,
+                        enabled,
+                      })
+                    }
                   />
                 </div>
-                
+
                 {webSearchConfig.enabled && (
                   <>
                     <div className="space-y-2">
                       <Label>Search Context Size</Label>
                       <Select
                         value={webSearchConfig.contextSize}
-                        onValueChange={(value: "low" | "medium" | "high") => 
+                        onValueChange={(value: "low" | "medium" | "high") =>
                           handleWebSearchSettingsChange({
                             ...webSearchConfig,
                             contextSize: value,
@@ -548,8 +488,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="low">Low (Fastest)</SelectItem>
-                          <SelectItem value="medium">Medium (Balanced)</SelectItem>
-                          <SelectItem value="high">High (Most comprehensive)</SelectItem>
+                          <SelectItem value="medium">
+                            Medium (Balanced)
+                          </SelectItem>
+                          <SelectItem value="high">
+                            High (Most comprehensive)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -560,48 +504,56 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         <Input
                           placeholder="Country (e.g., US, GB)"
                           value={webSearchConfig.location.country}
-                          onChange={(e) => handleWebSearchSettingsChange({
-                            ...webSearchConfig,
-                            location: {
-                              ...webSearchConfig.location,
-                              country: e.target.value,
-                            },
-                          })}
+                          onChange={(e) =>
+                            handleWebSearchSettingsChange({
+                              ...webSearchConfig,
+                              location: {
+                                ...webSearchConfig.location,
+                                country: e.target.value,
+                              },
+                            })
+                          }
                           maxLength={2}
                           className="uppercase"
                         />
                         <Input
                           placeholder="City"
                           value={webSearchConfig.location.city}
-                          onChange={(e) => handleWebSearchSettingsChange({
-                            ...webSearchConfig,
-                            location: {
-                              ...webSearchConfig.location,
-                              city: e.target.value,
-                            },
-                          })}
+                          onChange={(e) =>
+                            handleWebSearchSettingsChange({
+                              ...webSearchConfig,
+                              location: {
+                                ...webSearchConfig.location,
+                                city: e.target.value,
+                              },
+                            })
+                          }
                         />
                         <Input
                           placeholder="Region/State"
                           value={webSearchConfig.location.region}
-                          onChange={(e) => handleWebSearchSettingsChange({
-                            ...webSearchConfig,
-                            location: {
-                              ...webSearchConfig.location,
-                              region: e.target.value,
-                            },
-                          })}
+                          onChange={(e) =>
+                            handleWebSearchSettingsChange({
+                              ...webSearchConfig,
+                              location: {
+                                ...webSearchConfig.location,
+                                region: e.target.value,
+                              },
+                            })
+                          }
                         />
                         <Input
                           placeholder="Timezone (e.g., America/New_York)"
                           value={webSearchConfig.location.timezone}
-                          onChange={(e) => handleWebSearchSettingsChange({
-                            ...webSearchConfig,
-                            location: {
-                              ...webSearchConfig.location,
-                              timezone: e.target.value,
-                            },
-                          })}
+                          onChange={(e) =>
+                            handleWebSearchSettingsChange({
+                              ...webSearchConfig,
+                              location: {
+                                ...webSearchConfig.location,
+                                timezone: e.target.value,
+                              },
+                            })
+                          }
                         />
                       </div>
                     </div>
@@ -610,6 +562,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               </div>
             </div>
           )}
+
+          <Separator />
+
+          <div>
+            <h4 className="text-sm font-medium mb-3">System Message</h4>
+            <Textarea
+              placeholder="Describe desired model behavior (tone, tool usage, response style)"
+              value={currentConversation?.systemMessage ?? ""}
+              onChange={(e) => {
+                if (!currentConversation) return;
+                const updatedConversation = {
+                  ...currentConversation,
+                  systemMessage: e.target.value,
+                };
+                updateConversation(updatedConversation);
+              }}
+              className="min-h-[150px] resize-y"
+            />
+          </div>
         </div>
       </div>
     </>

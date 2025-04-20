@@ -26,6 +26,7 @@ export type Conversation = {
   modelId: string;
   modelSettings: ModelSettings;
   webSearchEnabled: boolean;
+  systemMessage?: string;
 };
 
 export type ModelSettings = {

@@ -275,6 +275,15 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // 4. Stream response and update assistant message in real time
     try {
+      // Determine if web search should be enabled for this request
+      const modelObj = settings.availableModels.find(m => m.id === model);
+      const enableWebSearch = !!(
+        updatedConversation.webSearchEnabled &&
+        modelObj &&
+        modelObj.supportsWebSearch
+      );
+      const tools = enableWebSearch ? [{ type: "web_search_preview" }] : undefined;
+
       let fullContent = "";
       for await (const delta of streamChatCompletion({
         apiKey,
@@ -282,6 +291,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         temperature,
         maxTokens,
         messages,
+        ...(tools ? { tools } : {}),
       })) {
         fullContent += delta;
         assistantMessage.content = fullContent;
@@ -307,7 +317,6 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       await updateConversation(updatedConversation);
     }
   };
-
   const value = {
     conversations,
     currentConversation,

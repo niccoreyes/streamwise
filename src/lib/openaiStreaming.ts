@@ -17,6 +17,8 @@ export interface StreamOptions {
   temperature: number;
   maxTokens: number;
   messages: ChatMessage[];
+  tools?: any[]; // For web search and other tool integrations
+  systemMessage?: string; // Optional system message to prepend
 }
 
 /**
@@ -31,16 +33,61 @@ export async function* streamChatCompletion(opts: StreamOptions): AsyncGenerator
     dangerouslyAllowBrowser: true,
   });
 
-  const stream = await client.chat.completions.create({
+  // Prepare messages with systemMessage if provided and not already present
+  let messages: ChatMessage[] = opts.messages || [];
+  if (opts.systemMessage) {
+    // Only prepend if the first message is not already a system message with the same content
+    if (
+      messages.length === 0 ||
+      messages[0].role !== "system" ||
+      messages[0].content !== opts.systemMessage
+    ) {
+      messages = [{ role: "system", content: opts.systemMessage }, ...messages];
+    }
+  }
+
+  // If using the web search tool, use the Responses API
+  const isWebSearch = opts.tools && opts.tools.some(t => t.type === "web_search_preview");
+  if (isWebSearch) {
+    // Use the last user message as input for web search
+    const lastUserMsg = messages?.slice().reverse().find(m => m.role === "user")?.content || "";
+    const payload: any = {
+      model: opts.model,
+      tools: opts.tools,
+      input: lastUserMsg,
+      stream: true,
+      // Optionally pass system prompt if supported by Responses API
+      ...(opts.systemMessage ? { system: opts.systemMessage } : {}),
+    };
+    // Do NOT add temperature or max_tokens: Responses API does not support them
+
+    // Use the OpenAI SDK's responses.create for streaming
+    const stream = await (client as any).responses.create(payload);
+
+    // The SDK's stream is an async iterable of objects with a 'data' property containing text
+    for await (const chunk of stream) {
+      // The streaming format for responses API is not always well-documented; fallback to output_text or text
+      const text = (chunk as any).output_text || (chunk as any).text || "";
+      if (text) {
+        yield text;
+      }
+    }
+    return;
+  }
+
+  // Otherwise, use Chat Completions API
+  const payload: any = {
     model: opts.model,
-    messages: opts.messages,
+    messages,
     temperature: opts.temperature,
     max_tokens: opts.maxTokens,
     stream: true,
-  });
+  };
+  if (opts.tools) {
+    payload.tools = opts.tools;
+  }
+  const stream = await client.chat.completions.create(payload);
 
-  // The OpenAI SDK's stream is an async iterable of objects with a 'choices' array.
-  // We'll use a type assertion inside the loop to avoid 'any' on the stream itself.
   for await (const chunk of stream) {
     const delta = (chunk as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content;
     if (delta) {
