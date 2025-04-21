@@ -149,7 +149,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     >
       <div
         className={cn(
-          "flex max-w-[80%]",
+          "flex max-w-[95vw] sm:max-w-[80%]",
           isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
@@ -172,9 +172,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             )}
           >
             <div className={cn(
-              "prose prose-sm max-w-none",
-              isUser 
-                ? "prose-invert" 
+              "prose prose-sm max-w-none break-words",
+              isUser
+                ? "prose-invert"
                 : "prose-gray dark:prose-invert"
             )}>
               {renderContent(message.content)}

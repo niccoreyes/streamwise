@@ -102,13 +102,33 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     if (currentConversation) {
       const model = availableModels.find((m) => m.id === modelId);
       if (model) {
+        // Determine web search state based on model capability
+        const webSearchEnabled = !!model.supportsWebSearch;
+        setLocalWebSearchEnabled(webSearchEnabled);
+        let webSearchSettings = undefined;
+        if (webSearchEnabled) {
+          // Use previous settings if available, else initialize
+          webSearchSettings =
+            currentConversation.modelSettings?.webSearchSettings ?? {
+              contextSize: "medium",
+              location: {
+                type: "approximate",
+                country: "PH",
+                city: "Manila",
+                region: "",
+                timezone: "",
+              },
+            };
+        }
         const updatedConversation = {
           ...currentConversation,
           modelId,
+          webSearchEnabled,
           modelSettings: {
             ...currentConversation.modelSettings,
             temperature: model.defaultTemperature,
             maxTokens: model.maxTokens,
+            webSearchSettings,
           },
         };
         await updateConversation(updatedConversation);

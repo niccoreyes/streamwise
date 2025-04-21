@@ -382,65 +382,87 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         modelObj &&
         modelObj.supportsWebSearch
       );
-      const tools = enableWebSearch ? [{ type: "web_search_preview" }] : undefined;
-
-      let fullContent = "";
-      // Use a local state update for streaming
-      setCurrentConversation({
-        ...updatedConversation,
-        messages: updatedConversation.messages.map((msg) =>
-          msg.id === assistantMessage.id ? { ...assistantMessage } : msg
-        ),
-        updatedAt: Date.now(),
-      });
-      for await (const event of streamChatCompletion({
-        apiKey,
-        model,
-        temperature,
-        maxTokens,
-        messages,
-        ...(tools ? { tools } : {}),
-        systemMessage: updatedConversation.systemMessage,
-      })) {
-        if (event.type === "final") {
-          // On "final", immediately set the assistant message to the full/final text
-          fullContent = event.text;
-          const newAssistantMessage = { ...assistantMessage, content: fullContent };
-          setCurrentConversation((prev) => prev
-            ? {
-                ...prev,
-                messages: prev.messages.map((msg) =>
-                  msg.id === assistantMessage.id ? newAssistantMessage : msg
-                ),
-                updatedAt: Date.now(),
-              }
-            : null
-          );
-        } else {
-          // Overwrite the previous content with the new state after each delta
-          fullContent += event.text;
-          const newAssistantMessage = { ...assistantMessage, content: fullContent };
-          setCurrentConversation((prev) => prev
-            ? {
-                ...prev,
-                messages: prev.messages.map((msg) =>
-                  msg.id === assistantMessage.id ? newAssistantMessage : msg
-                ),
-                updatedAt: Date.now(),
-              }
-            : null
-          );
-        }
+      let tools = undefined;
+      if (enableWebSearch) {
+        const webSearchSettings = updatedConversation.modelSettings.webSearchSettings;
+        const contextSize =
+          webSearchSettings && typeof webSearchSettings.contextSize === "string"
+            ? webSearchSettings.contextSize
+            : "medium";
+        const location =
+          webSearchSettings && typeof webSearchSettings.location === "object"
+            ? webSearchSettings.location
+            : { type: "approximate", country: "", city: "", region: "", timezone: "" };
+        const userLocation = {
+          type: "approximate",
+          country: location.country || "",
+          city: location.city || "",
+          region: location.region || "",
+          timezone: location.timezone || "",
+        };
+        tools = [{
+          type: "web_search_preview",
+          user_location: userLocation,
+          search_context_size: contextSize
+        }];
+    }
+    let fullContent = "";
+    // Use a local state update for streaming
+    setCurrentConversation({
+      ...updatedConversation,
+      messages: updatedConversation.messages.map((msg) =>
+        msg.id === assistantMessage.id ? { ...assistantMessage } : msg
+      ),
+      updatedAt: Date.now(),
+    });
+    for await (const event of streamChatCompletion({
+      apiKey,
+      model,
+      temperature,
+      maxTokens,
+      messages,
+      ...(tools ? { tools } : {}),
+      systemMessage: updatedConversation.systemMessage,
+    })) {
+      if (event.type === "final") {
+        // On "final", immediately set the assistant message to the full/final text
+        fullContent = event.text;
+        const newAssistantMessage = { ...assistantMessage, content: fullContent };
+        setCurrentConversation((prev) => prev
+          ? {
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === assistantMessage.id ? newAssistantMessage : msg
+              ),
+              updatedAt: Date.now(),
+            }
+          : null
+        );
+      } else {
+        // Overwrite the previous content with the new state after each delta
+        fullContent += event.text;
+        const newAssistantMessage = { ...assistantMessage, content: fullContent };
+        setCurrentConversation((prev) => prev
+          ? {
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === assistantMessage.id ? newAssistantMessage : msg
+              ),
+              updatedAt: Date.now(),
+            }
+          : null
+        );
       }
-      // After streaming, persist the final assistant message
-      updatedConversation = {
-        ...updatedConversation,
-        messages: updatedConversation.messages.map((msg) =>
-          msg.id === assistantMessage.id ? { ...assistantMessage, content: fullContent } : msg
-        ),
-        updatedAt: Date.now(),
-      };
-      await updateConversation(updatedConversation);
+    }
+    // After streaming, persist the final assistant message
+    updatedConversation = {
+      ...updatedConversation,
+      messages: updatedConversation.messages.map((msg) =>
+        msg.id === assistantMessage.id ? { ...assistantMessage, content: fullContent } : msg
+      ),
+      updatedAt: Date.now(),
+    };
+    await updateConversation(updatedConversation);
     } catch (err) {
       assistantMessage.content = "Error streaming response from OpenAI.";
       updatedConversation = {
