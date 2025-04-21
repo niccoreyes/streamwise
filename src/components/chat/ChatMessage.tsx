@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Message } from "@/types";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Trash2, Edit } from "lucide-react";
@@ -102,7 +103,17 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           </div>
         );
       }
-      return <ReactMarkdown>{content}</ReactMarkdown>;
+      
+      return (
+        <div className="markdown">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      );
+      return;
     }
     return content.map((part, idx) => {
       if (

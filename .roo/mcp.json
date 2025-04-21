@@ -1,0 +1,154 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "autoApprove": [
+        "list_projects",
+        "get_project",
+        "get_cost",
+        "confirm_cost",
+        "create_project",
+        "pause_project",
+        "restore_project",
+        "list_organizations",
+        "get_organization",
+        "list_tables",
+        "list_extensions",
+        "list_migrations",
+        "apply_migration",
+        "execute_sql",
+        "get_logs",
+        "get_project_url",
+        "get_anon_key",
+        "generate_typescript_types",
+        "create_branch",
+        "list_branches",
+        "delete_branch",
+        "merge_branch",
+        "reset_branch",
+        "rebase_branch"
+      ],
+      "timeout": 60,
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_2be8061690a1b1d0cf524c66fed84a81332b4f20"
+      ],
+      "transportType": "stdio"
+    },
+    "github.com/modelcontextprotocol/servers/tree/main/src/git": {
+      "autoApprove": [
+        "git_status",
+        "git_diff_unstaged",
+        "git_diff_staged",
+        "git_diff",
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_log",
+        "git_create_branch",
+        "git_checkout",
+        "git_show",
+        "git_init"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--mount",
+        "type=bind,src=C:/GitHub/text-echo-stream,dst=/projects/text-echo-stream",
+        "mcp/git"
+      ],
+      "transportType": "stdio"
+    },
+    "github.com/modelcontextprotocol/servers/tree/main/src/brave-search": {
+      "autoApprove": [
+        "brave_web_search"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "BRAVE_API_KEY=BSAgpbscLFuTBsViNTnIgDIZ27ph-EZ",
+        "mcp/brave-search"
+      ],
+      "transportType": "stdio"
+    },
+    "github.com/modelcontextprotocol/servers/tree/main/src/memory": {
+      "autoApprove": [
+        "add_observations",
+        "create_entities",
+        "create_relations",
+        "delete_entities",
+        "delete_observations",
+        "delete_relations",
+        "read_graph",
+        "search_nodes",
+        "open_nodes"
+      ],
+      "timeout": 60,
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "-v",
+        "claude-memory:/app/dist",
+        "--rm",
+        "mcp/memory"
+      ],
+      "transportType": "stdio"
+    },
+    "github.com/AgentDeskAI/browser-tools-mcp": {
+      "autoApprove": [
+        "list_tools",
+        "getConsoleLogs",
+        "getConsoleErrors",
+        "getNetworkErrors",
+        "getNetworkLogs",
+        "takeScreenshot",
+        "getSelectedElement",
+        "wipeLogs",
+        "runPerformanceAudit",
+        "runSEOAudit",
+        "runNextJSAudit",
+        "runDebuggerMode",
+        "runAuditMode",
+        "runBestPracticesAudit"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@agentdeskai/browser-tools-mcp@latest"
+      ],
+      "transportType": "stdio"
+    },
+    "github.com/upstash/context7-mcp": {
+      "autoApprove": [
+        "resolve-library-id",
+        "get-library-docs"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "transportType": "stdio",
+      "alwaysAllow": [
+        "resolve-library-id",
+        "get-library-docs"
+      ]
+    }
+  }
+}
