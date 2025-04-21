@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -9,12 +8,24 @@ import { ConversationProvider } from "@/context/ConversationContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 import { usePwaInstallPrompt, isStandaloneMode } from "@/hooks/usePwaInstallPrompt";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
+import { IosPwaInstallBanner } from "@/components/IosPwaInstallBanner";
+import { useIsIos, useIsSafari } from "@/hooks/use-device";
+
+const REMIND_KEY = "pwa-disable-install-reminder";
+const NOT_THIS_SESSION_KEY = "pwa-dont-remind-this-session";
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // --- PWA Install prompt logic
+  // --- Device detection for iOS PWA banner
+  const isIos = useIsIos();
+  const isSafari = useIsSafari();
+
+  // --- Local state for iOS install banner
+  const [showIosBanner, setShowIosBanner] = useState(false);
+
+  // --- PWA (Android/other) prompt logic
   const {
     showPrompt,
     maybeShowPrompt,
@@ -22,11 +33,35 @@ const Index = () => {
     dismiss,
   } = usePwaInstallPrompt();
 
-  // Whenever "login" happens, we should check if install prompt should show.
-  // For demo, we'll show on mount, but in an actual app call maybeShowPrompt() after login success
+  // Show iOS add-to-home-screen banner logic
   useEffect(() => {
-    maybeShowPrompt();
-  }, [maybeShowPrompt]);
+    if (!isIos || !isSafari) {
+      setShowIosBanner(false);
+      return;
+    }
+    if (isStandaloneMode()) {
+      setShowIosBanner(false);
+      return;
+    }
+    if (localStorage.getItem(REMIND_KEY) === "1") {
+      setShowIosBanner(false);
+      return;
+    }
+    if (sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1") {
+      setShowIosBanner(false);
+      return;
+    }
+    setShowIosBanner(true);
+  }, [isIos, isSafari]);
+
+  // Simulate "login": show install prompt after "login"
+  useEffect(() => {
+    if (isIos && isSafari) {
+      setShowIosBanner(true);
+    } else {
+      maybeShowPrompt();
+    }
+  }, [maybeShowPrompt, isIos, isSafari]);
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -79,10 +114,22 @@ const Index = () => {
             onClose={() => setSettingsOpen(false)} 
           />
         </div>
+
+        {/* PWA prompt (Android/Supported) – only if not iOS Safari */}
         <PwaInstallPrompt
-          open={showPrompt}
+          open={showPrompt && !(isIos && isSafari)}
           onInstall={doInstall}
           onCancel={dismiss}
+        />
+
+        {/* iOS Banner */}
+        <IosPwaInstallBanner
+          open={showIosBanner}
+          onClose={(dontRemindAgain) => {
+            setShowIosBanner(false);
+            sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
+            if (dontRemindAgain) localStorage.setItem(REMIND_KEY, "1");
+          }}
         />
       </SettingsProvider>
     </ConversationProvider>
