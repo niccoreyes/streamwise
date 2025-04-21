@@ -176,9 +176,25 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     modelId: string,
     modelSettings: ModelSettings
   ): Promise<Conversation> => {
+    // Utility to get the next available chat number
+    function getNextChatNumber(existingConversations: Conversation[]): number {
+      const usedNumbers = new Set<number>();
+      existingConversations.forEach(conv => {
+        const match = /^Chat (\d+)$/.exec(conv.title);
+        if (match) {
+          usedNumbers.add(Number(match[1]));
+        }
+      });
+      let n = 1;
+      while (usedNumbers.has(n)) n++;
+      return n;
+    }
+
+    // Assign the smallest available "Chat N" label
+    const nextNumber = getNextChatNumber(conversations);
     const newConversation: Conversation = {
       id: uuidv4(),
-      title: 'New Conversation',
+      title: `Chat ${nextNumber}`,
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -206,6 +222,17 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateConversation = async (conversation: Conversation): Promise<void> => {
+    // Prevent duplicate "Chat N" titles
+    if (/^Chat \d+$/.test(conversation.title)) {
+      const n = Number(conversation.title.replace("Chat ", ""));
+      const duplicate = conversations.some(
+        (conv) => conv.id !== conversation.id && conv.title === conversation.title
+      );
+      if (duplicate) {
+        // If duplicate, do not update and return early
+        return;
+      }
+    }
     await saveConversationToStorage(conversation);
     
     setConversations((prevConversations) =>

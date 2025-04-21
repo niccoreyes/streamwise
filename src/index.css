@@ -134,3 +134,7 @@
 .markdown tbody tr:hover {
   background: hsl(var(--accent) / 0.2);
 }
+
+.markdown {
+  width: fit-content;
+}

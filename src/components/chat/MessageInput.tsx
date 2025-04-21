@@ -234,7 +234,7 @@ export const MessageInput: React.FC = () => {
             placeholder="Type a message..."
             className={cn(
               "resize-none py-3 pr-10 max-h-32",
-              media ? "rounded-md" : "rounded-full"
+              media ? "rounded-md" : "rounded-lg"
             )}
             rows={1}
           />
