@@ -1,14 +1,4 @@
-
 {
-  "name": "StreamWise AI Chat",
-  "short_name": "StreamWise",
-  "description": "Modern AI chat application with advanced features",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#8b5cf6",
-  "prefer_related_applications": false,
-  "orientation": "portrait",
   "icons": [
     {
       "src": "windows11/SmallTile.scale-100.png",

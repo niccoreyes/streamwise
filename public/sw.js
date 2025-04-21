@@ -6,14 +6,14 @@ const urlsToCache = [
   '/index.html',
   '/manifest.json',
   '/favicon.ico',
-  '/icons/icon-72x72.png',
-  '/icons/icon-96x96.png',
-  '/icons/icon-128x128.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-152x152.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-384x384.png',
-  '/icons/icon-512x512.png'
+  '/android/android-launchericon-72-72.png',
+  '/android/android-launchericon-96-96.png',
+  '/ios/128.png',
+  '/android/android-launchericon-144-144.png',
+  '/ios/152.png',
+  '/android/android-launchericon-192-192.png',
+  '/ios/256.png',
+  '/android/android-launchericon-512-512.png'
 ];
 
 // Install event - cache assets
@@ -29,37 +29,29 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  if (event.request.method !== 'GET') return;
 
-        // Clone the request because it's a one-time use stream
-        const fetchRequest = event.request.clone();
+  const url = new URL(event.request.url);
+  const isStaticAsset = urlsToCache.includes(url.pathname);
 
-        return fetch(fetchRequest).then(
-          (response) => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+  // Handle navigation requests for SPA offline fallback
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
 
-            // Clone the response because it's a one-time use stream
-            const responseToCache = response.clone();
+  // Serve static assets from cache
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.match(event.request).then((response) => response || fetch(event.request))
+    );
+    return;
+  }
 
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
-  );
+  // For all other requests (e.g., JS/CSS), always fetch from network
+  event.respondWith(fetch(event.request));
 });
 
 // Activate event - clean up old caches
@@ -80,12 +72,3 @@ self.addEventListener('activate', (event) => {
 });
 
 // Handle offline fallback
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate' || (event.request.method === 'GET' && event.request.headers.get('accept').includes('text/html'))) {
-    event.respondWith(
-      fetch(event.request.url).catch(() => {
-        return caches.match('/index.html');
-      })
-    );
-  }
-});
