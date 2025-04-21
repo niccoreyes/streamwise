@@ -24,7 +24,7 @@ export const IosPwaInstallBanner: React.FC<IosPwaInstallBannerProps> = ({
       )}
     >
       <div className="flex items-center gap-2 mb-2">
-        <img src="/icons/icon-192x192.png" alt="" className="w-7 h-7 rounded" />
+        <img src="/ios/192.png" alt="" className="w-7 h-7 rounded" />
         <span className="text-base font-semibold text-gray-900">
           Add StreamWise to your Home Screen
         </span>
