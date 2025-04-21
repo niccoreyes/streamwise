@@ -185,7 +185,7 @@ export async function* streamChatCompletion(
      }
      if ((chunk as any).text !== undefined) {
        text = (chunk as any).text;
-       yield { type: "delta", text };
+       yield { type: "final", text };
        continue;
      }
      // Detect "done" events with full/final text
