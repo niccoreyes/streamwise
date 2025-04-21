@@ -54,7 +54,7 @@ const Index = () => {
           <div className="flex flex-1 pt-14">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             
-            <main className="flex-1 flex flex-col md:ml-64">
+            <main className="flex-1 flex flex-col min-h-0 relative md:ml-64">
               <ChatContainer />
               <MessageInput />
             </main>

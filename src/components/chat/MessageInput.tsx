@@ -149,7 +149,7 @@ export const MessageInput: React.FC = () => {
     };
 
   return (
-    <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+    <div className="sticky bottom-0 left-0 w-full z-10 bg-white dark:bg-gray-950 p-4 border-t border-gray-200 dark:border-gray-800 shadow-lg">
       {media && (
         <div className="mb-2 relative inline-block">
           {media.type === "image" && (
