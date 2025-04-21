@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SettingsDrawer } from "@/components/layout/SettingsDrawer";
@@ -7,20 +7,34 @@ import { ChatContainer } from "@/components/chat/ChatContainer";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { ConversationProvider } from "@/context/ConversationContext";
 import { SettingsProvider } from "@/context/SettingsContext";
+import { usePwaInstallPrompt, isStandaloneMode } from "@/hooks/usePwaInstallPrompt";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  
+
+  // --- PWA Install prompt logic
+  const {
+    showPrompt,
+    maybeShowPrompt,
+    doInstall,
+    dismiss,
+  } = usePwaInstallPrompt();
+
+  // Whenever "login" happens, we should check if install prompt should show.
+  // For demo, we'll show on mount, but in an actual app call maybeShowPrompt() after login success
+  useEffect(() => {
+    maybeShowPrompt();
+  }, [maybeShowPrompt]);
+
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
-        // On medium screens and larger, sidebar is always visible
-        setSidebarOpen(false); // Reset the state for when returning to mobile
+        setSidebarOpen(false); // Reset for when returning to mobile
       }
     };
-    
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -31,7 +45,7 @@ const Index = () => {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
-            console.log('ServiceWorker registration successful with scope: ', 
+            console.log('ServiceWorker registration successful with scope: ',
               registration.scope);
           },
           (err) => {
@@ -65,6 +79,11 @@ const Index = () => {
             onClose={() => setSettingsOpen(false)} 
           />
         </div>
+        <PwaInstallPrompt
+          open={showPrompt}
+          onInstall={doInstall}
+          onCancel={dismiss}
+        />
       </SettingsProvider>
     </ConversationProvider>
   );
