@@ -26,7 +26,7 @@ import type { MessageContentPart } from "@/types";
 export const MessageInput: React.FC = () => {
   const { sendMessageAndStream, addMessage } = useConversation();
   const [message, setMessage] = useState("");
-  const [media, setMedia] = useState<{ url: string; type: "image" | "audio" | "video"; file?: File | Blob } | null>(null);
+  const [mediaList, setMediaList] = useState<{ url: string; type: "image" | "audio" | "video"; file?: File | Blob }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showInsertDialog, setShowInsertDialog] = useState(false);
@@ -36,45 +36,44 @@ export const MessageInput: React.FC = () => {
   const handleSendMessage = async () => {
     // Cache current values
     const currentMessage = message;
-    const currentMedia = media;
+    const currentMediaList = mediaList;
 
     // Immediately clear input fields
     setMessage("");
-    setMedia(null);
+    setMediaList([]);
 
-    if (!currentMessage.trim() && !currentMedia) return;
+    if (!currentMessage.trim() && currentMediaList.length === 0) return;
 
-    // If image, read as base64 and build content array
     let content: string | MessageContentPart[] = currentMessage;
-    if (currentMedia && currentMedia.type === "image" && currentMedia.file) {
+    if (currentMediaList.length > 0) {
       const arr: MessageContentPart[] = [];
       if (currentMessage.trim()) {
         arr.push({ type: "input_text", text: currentMessage });
       }
-      // Read file/blob as base64
-      const file = currentMedia.file as File | Blob;
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      arr.push({ type: "input_image", image_data: base64 });
-      content = arr;
-    } else if (currentMedia && currentMedia.type === "image") {
-      // fallback: if no file, just send as before (should not happen)
-      const arr: MessageContentPart[] = [];
-      if (currentMessage.trim()) {
-        arr.push({ type: "input_text", text: currentMessage });
+      // For each media, process as input_image/audio/video
+      for (const media of currentMediaList) {
+        if (media.type === "image" && media.file) {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(media.file as File | Blob);
+          });
+          arr.push({ type: "input_image", image_data: base64 });
+        } else if (media.type === "image") {
+          arr.push({ type: "input_image", image_data: media.url });
+        } else if (media.type === "audio" && media.file) {
+          // Optionally handle audio
+        } else if (media.type === "video" && media.file) {
+          // Optionally handle video
+        }
       }
-      arr.push({ type: "input_image", image_data: currentMedia.url });
       content = arr;
     }
 
     await sendMessageAndStream({
       role: "user",
       content,
-      ...(currentMedia && { mediaUrl: currentMedia.url, mediaType: currentMedia.type }),
     });
   };
 
@@ -86,41 +85,52 @@ export const MessageInput: React.FC = () => {
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files) return;
 
-    const fileType = file.type.split("/")[0];
-    if (!["image", "audio", "video"].includes(fileType)) {
-      alert("Unsupported file type. Please upload an image, audio, or video file.");
-      return;
+    const newMedia: { url: string; type: "image" | "audio" | "video"; file?: File | Blob }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileType = file.type.split("/")[0];
+      if (!["image", "audio", "video"].includes(fileType)) {
+        alert("Unsupported file type. Please upload an image, audio, or video file.");
+        continue;
+      }
+      const mediaType = fileType as "image" | "audio" | "video";
+      const url = URL.createObjectURL(file);
+      newMedia.push({ url, type: mediaType, file });
     }
-
-    const mediaType = fileType as "image" | "audio" | "video";
-    const url = URL.createObjectURL(file);
-    setMedia({ url, type: mediaType, file });
+    setMediaList((prev) => [...prev, ...newMedia]);
+    // Reset input so same file can be selected again if needed
+    e.target.value = "";
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
-    
+    const newMedia: { url: string; type: "image"; file: File | Blob }[] = [];
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf("image") !== -1) {
         const blob = items[i].getAsFile();
         if (blob) {
           const url = URL.createObjectURL(blob);
-          setMedia({ url, type: "image", file: blob });
-          e.preventDefault();
-          return;
+          newMedia.push({ url, type: "image", file: blob });
         }
       }
     }
+    if (newMedia.length > 0) {
+      setMediaList((prev) => [...prev, ...newMedia]);
+      e.preventDefault();
+    }
   };
 
-  const removeMedia = () => {
-    if (media) {
-      URL.revokeObjectURL(media.url);
-      setMedia(null);
-    }
+  const removeMedia = (index: number) => {
+    setMediaList((prev) => {
+      const toRemove = prev[index];
+      if (toRemove) {
+        URL.revokeObjectURL(toRemove.url);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleMicClick = () => {
@@ -150,30 +160,33 @@ export const MessageInput: React.FC = () => {
 
   return (
     <div className="sticky bottom-0 left-0 w-full z-10 bg-white dark:bg-gray-950 p-4 border-t border-gray-200 dark:border-gray-800 shadow-lg">
-      {media && (
-        <div className="mb-2 relative inline-block">
-          {media.type === "image" && (
-            <img
-              src={media.url}
-              alt="Uploaded preview"
-              className="max-h-32 rounded-md"
-            />
-          )}
-          {media.type === "audio" && (
-            <audio src={media.url} controls className="max-w-full" />
-          )}
-          {media.type === "video" && (
-            <video src={media.url} controls className="max-h-32 rounded-md" />
-          )}
-          
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-            onClick={removeMedia}
-          >
-            <X className="h-3 w-3" />
-          </Button>
+      {mediaList.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {mediaList.map((media, idx) => (
+            <div key={media.url} className="relative inline-block">
+              {media.type === "image" && (
+                <img
+                  src={media.url}
+                  alt="Uploaded preview"
+                  className="max-h-32 rounded-md"
+                />
+              )}
+              {media.type === "audio" && (
+                <audio src={media.url} controls className="max-w-full" />
+              )}
+              {media.type === "video" && (
+                <video src={media.url} controls className="max-h-32 rounded-md" />
+              )}
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                onClick={() => removeMedia(idx)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
       
@@ -234,7 +247,7 @@ export const MessageInput: React.FC = () => {
             placeholder="Type a message..."
             className={cn(
               "resize-none py-3 pr-10 max-h-32",
-              media ? "rounded-md" : "rounded-lg"
+              mediaList.length > 0 ? "rounded-md" : "rounded-lg"
             )}
             rows={1}
           />
@@ -266,7 +279,7 @@ export const MessageInput: React.FC = () => {
           size="icon"
           className="rounded-full h-10 w-10 bg-streamwise-500 hover:bg-streamwise-600"
           onClick={handleSendMessage}
-          disabled={!message.trim() && !media}
+          disabled={!message.trim() && mediaList.length === 0}
         >
           <Send className="h-5 w-5" />
         </Button>
@@ -278,6 +291,7 @@ export const MessageInput: React.FC = () => {
         onChange={handleFileChange}
         className="hidden"
         accept="image/*,audio/*,video/*"
+        multiple
       />
     </div>
   );
