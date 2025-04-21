@@ -25,7 +25,9 @@ export function usePwaInstallPrompt() {
     if (isIos && isSafari) return;
     if (isStandaloneMode()) return;
     if (localStorage.getItem(REMIND_KEY) === "1") return;
-    if (sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1") return;
+    
+    // Remove this check so it shows each time a user logs in unless disabled permanently
+    // if (sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1") return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -42,15 +44,15 @@ export function usePwaInstallPrompt() {
   const maybeShowPrompt = useCallback(() => {
     if (
       isStandaloneMode() ||
-      localStorage.getItem(REMIND_KEY) === "1" ||
-      sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1" ||
-      (isIos && isSafari)
+      localStorage.getItem(REMIND_KEY) === "1"
+      // Removed the session storage check
+      // sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1"
     ) {
       setShowPrompt(false);
       return;
     }
     if (deferredPrompt) setShowPrompt(true);
-  }, [deferredPrompt, isIos, isSafari]);
+  }, [deferredPrompt]);
 
   const doInstall = async () => {
     if (!deferredPrompt) return;
@@ -58,13 +60,20 @@ export function usePwaInstallPrompt() {
     if (deferredPrompt.prompt) await (deferredPrompt as any).prompt();
     setShowPrompt(false);
     setDeferredPrompt(null);
+    
+    // Only store in sessionStorage if user completed installation
     sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
   };
 
   const dismiss = (dontRemind: boolean) => {
     setShowPrompt(false);
-    sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
-    if (dontRemind) localStorage.setItem(REMIND_KEY, "1");
+    
+    // Only save don't remind preference if checkbox was ticked
+    if (dontRemind) {
+      localStorage.setItem(REMIND_KEY, "1");
+    }
+    
+    // No longer setting session storage here for "Maybe later" option
   };
 
   return {

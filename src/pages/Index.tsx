@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -47,10 +48,13 @@ const Index = () => {
       setShowIosBanner(false);
       return;
     }
-    if (sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1") {
-      setShowIosBanner(false);
-      return;
-    }
+    
+    // Remove this check so banner shows each time unless permanently disabled
+    // if (sessionStorage.getItem(NOT_THIS_SESSION_KEY) === "1") {
+    //   setShowIosBanner(false);
+    //   return;
+    // }
+    
     setShowIosBanner(true);
   }, [isIos, isSafari]);
 
@@ -127,8 +131,14 @@ const Index = () => {
           open={showIosBanner}
           onClose={(dontRemindAgain) => {
             setShowIosBanner(false);
-            sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
-            if (dontRemindAgain) localStorage.setItem(REMIND_KEY, "1");
+            
+            // Only save don't remind preference if checkbox was ticked
+            if (dontRemindAgain) {
+              localStorage.setItem(REMIND_KEY, "1");
+            }
+            
+            // Removed - no longer setting session storage on Maybe Later
+            // sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
           }}
         />
       </SettingsProvider>
