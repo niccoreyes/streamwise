@@ -34,17 +34,25 @@ export const MessageInput: React.FC = () => {
   const [messageRole, setMessageRole] = useState<"system" | "user" | "assistant">("user");
 
   const handleSendMessage = async () => {
-    if (!message.trim() && !media) return;
+    // Cache current values
+    const currentMessage = message;
+    const currentMedia = media;
+
+    // Immediately clear input fields
+    setMessage("");
+    setMedia(null);
+
+    if (!currentMessage.trim() && !currentMedia) return;
 
     // If image, read as base64 and build content array
-    let content: string | MessageContentPart[] = message;
-    if (media && media.type === "image" && media.file) {
+    let content: string | MessageContentPart[] = currentMessage;
+    if (currentMedia && currentMedia.type === "image" && currentMedia.file) {
       const arr: MessageContentPart[] = [];
-      if (message.trim()) {
-        arr.push({ type: "input_text", text: message });
+      if (currentMessage.trim()) {
+        arr.push({ type: "input_text", text: currentMessage });
       }
       // Read file/blob as base64
-      const file = media.file as File | Blob;
+      const file = currentMedia.file as File | Blob;
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -53,24 +61,21 @@ export const MessageInput: React.FC = () => {
       });
       arr.push({ type: "input_image", image_data: base64 });
       content = arr;
-    } else if (media && media.type === "image") {
+    } else if (currentMedia && currentMedia.type === "image") {
       // fallback: if no file, just send as before (should not happen)
       const arr: MessageContentPart[] = [];
-      if (message.trim()) {
-        arr.push({ type: "input_text", text: message });
+      if (currentMessage.trim()) {
+        arr.push({ type: "input_text", text: currentMessage });
       }
-      arr.push({ type: "input_image", image_data: media.url });
+      arr.push({ type: "input_image", image_data: currentMedia.url });
       content = arr;
     }
 
     await sendMessageAndStream({
       role: "user",
       content,
-      ...(media && { mediaUrl: media.url, mediaType: media.type }),
+      ...(currentMedia && { mediaUrl: currentMedia.url, mediaType: currentMedia.type }),
     });
-
-    setMessage("");
-    setMedia(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
