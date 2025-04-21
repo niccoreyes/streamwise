@@ -227,6 +227,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const model = availableModels.find((m) => m.id === modelId);
     if (model) {
       setSelectedModel(model);
+
+      // Update webSearchConfig.enabled based on model capability
+      setWebSearchConfig({
+        ...webSearchConfig,
+        enabled: !!model.supportsWebSearch
+      });
+
       (async () => {
         try {
           const config = await db.getConfig();
