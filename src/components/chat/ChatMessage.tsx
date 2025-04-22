@@ -162,7 +162,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
         return (
-          <span key={idx} style={{ color: "red" }}>
+          <span key={idx} className="text-red-500">
             Image unavailable
           </span>
         );
@@ -206,30 +206,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             */}
             {bubbleIndex === 0 ? (
               <div
-                className="absolute left-1/2"
-                style={{
-                  width: "80px",
-                  height: "24px",
-                  transform: "translateX(-50%)",
-                  top: "100%",
-                  bottom: "auto",
-                  zIndex: 50,
-                  pointerEvents: "auto",
-                }}
+                className="absolute left-1/2 w-[80px] h-[24px] -translate-x-1/2 top-full bottom-auto z-50 pointer-events-auto"
                 tabIndex={-1}
                 aria-hidden="true"
               />
             ) : (
               <div
-                className="absolute left-1/2 z-10"
-                style={{
-                  width: "60px",
-                  height: "16px",
-                  transform: "translateX(-50%)",
-                  top: "auto",
-                  bottom: "100%",
-                  pointerEvents: "auto",
-                }}
+                className="absolute left-1/2 z-10 w-[60px] h-[16px] -translate-x-1/2 bottom-full pointer-events-auto"
                 tabIndex={-1}
                 aria-hidden="true"
               />
@@ -238,44 +221,40 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             {(() => {
               // Deduplicated: single render, pop direction logic inside
               const popDirection = bubbleIndex === 0 ? "down" : "up";
-              const style =
-                popDirection === "down"
-                  ? {
-                      top: "100%",
-                      bottom: "auto",
-                      marginTop: "0.5rem",
-                      marginBottom: 0,
-                    }
-                  : {
-                      top: "auto",
-                      bottom: "100%",
-                      marginTop: 0,
-                      marginBottom: "0.5rem",
-                    };
               return (
                 <div
                   className={cn(
                     "absolute left-1/2 z-20 flex items-center justify-center",
                     "transition-all duration-200",
                     "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 opacity-0",
-                    "action-mini-bubble"
+                    "action-mini-bubble",
+                    "transform -translate-x-1/2",
+                    popDirection === "down" 
+                      ? "top-full bottom-auto mt-2 mb-0" 
+                      : "top-auto bottom-full mt-0 mb-2"
                   )}
-                  style={{
-                    transform: "translateX(-50%)",
-                    ...style,
-                  }}
                   tabIndex={-1}
                 >
+                  {/* Bubble tail: single SVG, filled and outlined, direction based on bubbleIndex */}
+                  <svg
+                    className={`absolute left-1/2 ${bubbleIndex !== 0 ? "top-full" : "bottom-full"} -translate-x-1/2 z-50 pointer-events-none`}
+                    width="28" height="14" viewBox="0 0 28 14" fill="none"
+                    aria-hidden="true"
+                  >
+                    <polygon
+                      points={bubbleIndex !== 0 ? "14,14 24,0 4,0" : "14,0 24,14 4,14"}
+                      fill="white"
+                      stroke="#e5e7eb"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      className="dark:stroke-gray-700"
+                    />
+                  </svg>
                   <div
                     className={cn(
-                      "rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1 flex gap-1",
+                      "rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1 flex gap-1 items-center min-h-[36px] min-w-auto",
                       "minibubble-compact"
                     )}
-                    style={{
-                      minHeight: "36px",
-                      minWidth: "auto",
-                      alignItems: "center",
-                    }}
                   >
                     {/* Edit Button */}
                     <Button
