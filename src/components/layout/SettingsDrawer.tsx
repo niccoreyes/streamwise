@@ -598,9 +598,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             </div>
           )}
 
-          <Separator />
 
           {currentConversation && selectedModel.supportsWebSearch && (
+            <>
+            <Separator />
             <div>
               <h4 className="text-sm font-medium mb-3">
                 Web Search Configuration
@@ -670,6 +671,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 )}
               </div>
             </div>
+            </>
           )}
 
           <Separator />

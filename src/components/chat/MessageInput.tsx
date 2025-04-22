@@ -31,7 +31,7 @@ export const MessageInput: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showInsertDialog, setShowInsertDialog] = useState(false);
   const [manualMessage, setManualMessage] = useState("");
-  const [messageRole, setMessageRole] = useState<"system" | "user" | "assistant">("user");
+  const [messageRole, setMessageRole] = useState<"user" | "assistant">("user");
 
   const handleSendMessage = async () => {
     // Cache current values
@@ -214,7 +214,6 @@ export const MessageInput: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="system">System</SelectItem>
                     <SelectItem value="user">User</SelectItem>
                     <SelectItem value="assistant">Assistant</SelectItem>
                   </SelectContent>
