@@ -138,3 +138,34 @@
 .markdown {
   width: fit-content;
 }
+.markdown {
+  width: 100%;
+  max-width: 100%;
+}
+
+.markdown pre {
+  overflow-x: auto;
+  max-width: 100%;
+  background: #18181b;
+  color: #f4f4f5;
+  border-radius: 0.5rem;
+  padding: 1em;
+  font-size: 0.95em;
+  margin: 0.5em 0;
+}
+
+.markdown code {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-size: 0.97em;
+}
+
+.markdown pre code {
+  white-space: pre;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  display: block;
+  padding: 0;
+  background: none;
+  color: inherit;
+}
