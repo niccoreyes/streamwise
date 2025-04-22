@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Message } from "@/types";
 import ReactMarkdown from "react-markdown";
@@ -113,7 +112,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           </ReactMarkdown>
         </div>
       );
-      return;
     }
     return content.map((part, idx) => {
       if (
@@ -163,13 +161,110 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         </Avatar>
 
         <div className="relative group">
+          {/* Mini bubble for action buttons */}
           <div
             className={cn(
-              "px-4 py-2 rounded-lg",
+              "absolute left-1/2 z-20 flex items-center justify-center",
+              "transition-all duration-200",
+              "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 opacity-0",
+              "action-mini-bubble"
+            )}
+            style={{
+              transform: "translateX(-50%)",
+              top: "auto",
+              bottom: "100%",
+              marginBottom: "0.5rem"
+            }}
+            tabIndex={-1}
+            // Dynamic pop direction based on viewport position
+            onMouseEnter={e => {
+              const bubble = e.currentTarget;
+              const rect = bubble.getBoundingClientRect();
+              if (rect.top < 60) {
+                bubble.style.top = "100%";
+                bubble.style.bottom = "auto";
+                bubble.style.marginTop = "0.5rem";
+                bubble.style.marginBottom = "0";
+              } else {
+                bubble.style.top = "auto";
+                bubble.style.bottom = "100%";
+                bubble.style.marginTop = "0";
+                bubble.style.marginBottom = "0.5rem";
+              }
+            }}
+          >
+            <div
+              className={cn(
+                "rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1 flex gap-1",
+                "minibubble-compact"
+              )}
+              style={{
+                minHeight: "36px",
+                minWidth: "auto",
+                alignItems: "center"
+              }}
+            >
+              {/* Edit Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEdit}
+                className="h-7 w-7"
+                aria-label="Edit message"
+                tabIndex={0}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              {/* Delete Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDelete}
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                aria-label="Delete message"
+                tabIndex={0}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              {/* Copy Raw Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (typeof message.content === "string") {
+                    navigator.clipboard.writeText(message.content);
+                  } else if (Array.isArray(message.content)) {
+                    // Join all text parts for raw copy
+                    const raw = message.content
+                      .map((part) =>
+                        part.type === "input_text" || part.type === "output_text"
+                          ? part.text
+                          : part.type === "input_image"
+                          ? "[image]"
+                          : ""
+                      )
+                      .join("\n");
+                    navigator.clipboard.writeText(raw);
+                  }
+                }}
+                className="h-7 w-7"
+                aria-label="Copy raw text"
+                title="Copy raw text"
+                tabIndex={0}
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </Button>
+            </div>
+          </div>
+          <div
+            className={cn(
+              "px-4 py-2 rounded-lg transition-shadow duration-200",
+              "bubble-action-highlight",
               isUser
                 ? "bg-streamwise-500 text-white"
                 : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
             )}
+            tabIndex={0}
           >
             <div className={cn(
               "prose prose-sm max-w-none break-words",
@@ -178,31 +273,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                 : "prose-gray dark:prose-invert"
             )}>
               {renderContent(message.content)}
-            </div>
-          </div>
-
-          {/* Edit/Delete buttons */}
-          <div className={cn(
-            "absolute top-2 opacity-0 group-hover:opacity-100 transition-opacity",
-            isUser ? "-left-20" : "-right-20"
-          )}>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleEdit}
-                className="h-8 w-8"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleDelete}
-                className="h-8 w-8 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
