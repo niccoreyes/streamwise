@@ -235,17 +235,19 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   )}
                   tabIndex={-1}
                 >
-                  {/* Bubble tail: single SVG, filled and outlined, direction based on bubbleIndex */}
+                  {/* Bubble tail: only outline the outer two lines, match mini bubble border */}
                   <svg
-                    className={`absolute left-1/2 ${bubbleIndex !== 0 ? "top-full" : "bottom-full"} -translate-x-1/2 z-50 pointer-events-none`}
+                    className={`absolute left-1/2 ${bubbleIndex !== 0 ? "top-[calc(100%-1px)]" : "bottom-[calc(100%-1px)]"} -translate-x-1/2 z-50 pointer-events-none`}
                     width="28" height="14" viewBox="0 0 28 14" fill="none"
                     aria-hidden="true"
                   >
-                    <polygon
-                      points={bubbleIndex !== 0 ? "14,14 24,0 4,0" : "14,0 24,14 4,14"}
+                    <path
+                      d={bubbleIndex !== 0
+                        ? "M4,0 L14,14 L24,0"
+                        : "M4,14 L14,0 L24,14"}
                       fill="white"
                       stroke="#e5e7eb"
-                      strokeWidth="2"
+                      strokeWidth="1"
                       strokeLinejoin="round"
                       className="dark:stroke-gray-700"
                     />
