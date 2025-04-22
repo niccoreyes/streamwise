@@ -20,11 +20,15 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useSettings } from "@/context/useSettings";
 
 import type { MessageContentPart } from "@/types";
 
 export const MessageInput: React.FC = () => {
   const { sendMessageAndStream, addMessage } = useConversation();
+  // Use import, not require, for hooks in React/TypeScript
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { currentApiKey, apiKeys } = useSettings();
   const [message, setMessage] = useState("");
   const [mediaList, setMediaList] = useState<{ url: string; type: "image" | "audio" | "video"; file?: File | Blob }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,7 +282,8 @@ export const MessageInput: React.FC = () => {
           size="icon"
           className="rounded-full h-10 w-10 bg-streamwise-500 hover:bg-streamwise-600"
           onClick={handleSendMessage}
-          disabled={!message.trim() && mediaList.length === 0}
+          // Disable send if no message/media or if API key is not yet available (prevents race condition)
+          disabled={!message.trim() && mediaList.length === 0 || !currentApiKey}
         >
           <Send className="h-5 w-5" />
         </Button>

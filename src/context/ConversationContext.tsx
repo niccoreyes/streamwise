@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { LocalStorage } from '@/lib/localStorage';
 import { Conversation, Message, ModelSettings } from '@/types';
 import { streamChatCompletion, ChatMessage } from '@/lib/openaiStreaming';
-import { useSettings } from './SettingsContext';
+import { useSettings } from './useSettings';
 
 type ConversationContextType = {
   conversations: Conversation[];
@@ -33,6 +33,9 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const settings = useSettings();
+
+  // Debug: log settings on every render
+
   // Load conversations on mount
   useEffect(() => {
     const loadConversations = async () => {
@@ -142,7 +145,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
     
     loadConversations();
-  }, []);
+  }, [settings.apiKeys, settings.currentApiKey]);
 
   const saveConversationToStorage = async (conversation: Conversation): Promise<void> => {
     try {
@@ -324,6 +327,11 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // New: Send message and stream assistant response
   const sendMessageAndStream = async (message: Omit<Message, 'id' | 'timestamp'>): Promise<void> => {
     if (!currentConversation) return;
+    // Always use the latest available API key, falling back to the first key if needed
+    const apiKey =
+      settings.currentApiKey?.key ||
+      (settings.apiKeys && settings.apiKeys.length > 0 ? settings.apiKeys[0].key : null);
+    // DEBUG: Log when sendMessageAndStream is triggered and which API key is used
     // 1. Add user message
     const userMessage: Message = {
       ...message,
@@ -352,7 +360,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Do NOT persist yet; will persist after streaming
 
     // 3. Extract OpenAI params
-    const apiKey = settings.currentApiKey?.key;
+    // const apiKey = settings.currentApiKey?.key; // REMOVED duplicate declaration, now handled above
     // Use the modelId from the current conversation, not the global selectedModel
     const model = updatedConversation.modelId;
     const temperature = updatedConversation.modelSettings.temperature;

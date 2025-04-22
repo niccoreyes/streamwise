@@ -96,53 +96,51 @@ const Index = () => {
   }, []);
 
   return (
-    <ConversationProvider>
-      <SettingsProvider>
-        <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-          <Header 
-            onOpenSettings={() => setSettingsOpen(true)} 
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-          />
+    <>
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+        <Header
+          onOpenSettings={() => setSettingsOpen(true)}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
+        
+        <div className="flex flex-1 pt-14">
+          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           
-          <div className="flex flex-1 pt-14">
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-            
-            <main className="flex-1 flex flex-col min-h-0 relative md:ml-64">
-              <ChatContainer />
-              <MessageInput />
-            </main>
-          </div>
-          
-          <SettingsDrawer 
-            isOpen={settingsOpen} 
-            onClose={() => setSettingsOpen(false)} 
-          />
+          <main className="flex-1 flex flex-col min-h-0 relative md:ml-64">
+            <ChatContainer />
+            <MessageInput />
+          </main>
         </div>
-
-        {/* PWA prompt (Android/Supported) – only if not iOS Safari */}
-        <PwaInstallPrompt
-          open={showPrompt && !(isIos && isSafari)}
-          onInstall={doInstall}
-          onCancel={dismiss}
+        
+        <SettingsDrawer
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
         />
+      </div>
 
-        {/* iOS Banner */}
-        <IosPwaInstallBanner
-          open={showIosBanner}
-          onClose={(dontRemindAgain) => {
-            setShowIosBanner(false);
-            
-            // Only save don't remind preference if checkbox was ticked
-            if (dontRemindAgain) {
-              localStorage.setItem(REMIND_KEY, "1");
-            }
-            
-            // Removed - no longer setting session storage on Maybe Later
-            // sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
-          }}
-        />
-      </SettingsProvider>
-    </ConversationProvider>
+      {/* PWA prompt (Android/Supported) – only if not iOS Safari */}
+      <PwaInstallPrompt
+        open={showPrompt && !(isIos && isSafari)}
+        onInstall={doInstall}
+        onCancel={dismiss}
+      />
+
+      {/* iOS Banner */}
+      <IosPwaInstallBanner
+        open={showIosBanner}
+        onClose={(dontRemindAgain) => {
+          setShowIosBanner(false);
+          
+          // Only save don't remind preference if checkbox was ticked
+          if (dontRemindAgain) {
+            localStorage.setItem(REMIND_KEY, "1");
+          }
+          
+          // Removed - no longer setting session storage on Maybe Later
+          // sessionStorage.setItem(NOT_THIS_SESSION_KEY, "1");
+        }}
+      />
+    </>
   );
 };
 

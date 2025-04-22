@@ -4,7 +4,7 @@ import { ChevronLeft, Plus, Trash, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useConversation } from "@/context/ConversationContext";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/context/useSettings";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";

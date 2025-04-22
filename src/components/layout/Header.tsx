@@ -2,7 +2,7 @@
 import React from "react";
 import { Plus, Settings, Menu } from "lucide-react";
 import { useConversation } from "@/context/ConversationContext";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/context/useSettings";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {

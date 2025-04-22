@@ -100,7 +100,7 @@ type WebSearchConfig = {
   };
 };
 
-type SettingsContextType = {
+export type SettingsContextType = {
   apiKeys: ApiKey[];
   currentApiKey: ApiKey | null;
   availableModels: AIModel[];
@@ -115,7 +115,7 @@ type SettingsContextType = {
   setSystemMessage: (msg: string) => void;
 };
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -150,7 +150,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         
         setApiKeys(dbApiKeys);
-        
+
         if (dbApiKeys.length > 0) {
           setCurrentApiKey(dbApiKeys[0]);
         }
@@ -191,8 +191,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       LocalStorage.saveApiKey(newApiKey);
     }
     
-    setApiKeys((prevApiKeys) => [...prevApiKeys, newApiKey]);
-    setCurrentApiKey(newApiKey);
+    setApiKeys((prevApiKeys) => {
+      const updated = [...prevApiKeys, newApiKey];
+      return updated;
+    });
+    setCurrentApiKey((prev) => {
+      return newApiKey;
+    });
   };
 
   const deleteApiKey = async (id: string): Promise<void> => {
@@ -285,10 +290,3 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-export const useSettings = (): SettingsContextType => {
-  const context = useContext(SettingsContext);
-  if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
-  }
-  return context;
-};

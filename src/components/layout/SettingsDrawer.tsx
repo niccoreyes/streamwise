@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/context/useSettings";
 import { useConversation } from "@/context/ConversationContext";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -474,7 +474,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             ? "text-streamwise-500"
                             : ""
                         }
-                        onClick={() => setCurrentApiKey(key.id)}
+                        onClick={() => {
+                          setCurrentApiKey(key.id);
+                        }}
                       >
                         {currentApiKey?.id === key.id ? "Selected" : "Select"}
                       </Button>

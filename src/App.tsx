@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { SettingsProvider } from "@/context/SettingsContext";
+import { ConversationProvider } from "@/context/ConversationContext";
 // import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -38,7 +39,9 @@ const App = () => {
               element={
                 // <ErrorBoundary>
                   <SettingsProvider>
-                    <Index />
+                    <ConversationProvider>
+                      <Index />
+                    </ConversationProvider>
                   </SettingsProvider>
                 // </ErrorBoundary>
               }
