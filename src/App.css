@@ -40,3 +40,7 @@
 .read-the-docs {
   color: #888;
 }
+.safe-area-header {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: constant(safe-area-inset-top, 0px);
+}
