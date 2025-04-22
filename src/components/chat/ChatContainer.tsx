@@ -40,8 +40,17 @@ export const ChatContainer: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
-      {currentConversation.messages.map((message) => (
-        <ChatMessage key={message.id} message={message} />
+      {/*
+        Pass bubbleIndex and totalBubbles to each ChatMessage for position-aware UI logic.
+        This enables accurate detection of first, last, and intermediate bubbles, and is extensible for future features.
+      */}
+      {currentConversation.messages.map((message, idx) => (
+        <ChatMessage
+          key={message.id}
+          message={message}
+          bubbleIndex={idx}
+          totalBubbles={currentConversation.messages.length}
+        />
       ))}
       <div ref={messagesEndRef} />
     </div>

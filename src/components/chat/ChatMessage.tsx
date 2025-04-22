@@ -8,20 +8,40 @@ import { Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConversation } from "@/context/ConversationContext";
 import type { MessageContentPart } from "@/types";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+/**
+ * ChatMessageProps now accepts bubbleIndex and totalBubbles for flexible, future-proof UI logic.
+ * - bubbleIndex: The zero-based index of this bubble in the chat sequence.
+ * - totalBubbles: The total number of bubbles in the conversation.
+ * This allows the component to determine if it's the first, last, or any position, and is extensible for future features.
+ */
 interface ChatMessageProps {
   message: Message;
+  bubbleIndex: number;
+  totalBubbles: number;
 }
 
-function isInputImage(part: MessageContentPart): part is MessageContentPart & { image_data: string } {
-  return part.type === "input_image" && "image_data" in part && typeof (part as { image_data?: unknown }).image_data === "string";
+function isInputImage(
+  part: MessageContentPart
+): part is MessageContentPart & { image_data: string } {
+  return (
+    part.type === "input_image" &&
+    "image_data" in part &&
+    typeof (part as { image_data?: unknown }).image_data === "string"
+  );
 }
 
 // Custom hook to convert base64 to blob URL
-function useBase64ToBlobUrls(content: MessageContentPart[] | string): (string | undefined)[] {
+function useBase64ToBlobUrls(
+  content: MessageContentPart[] | string
+): (string | undefined)[] {
   const [blobUrls, setBlobUrls] = React.useState<(string | undefined)[]>([]);
   React.useEffect(() => {
     if (typeof content === "string") {
@@ -59,10 +79,20 @@ function useBase64ToBlobUrls(content: MessageContentPart[] | string): (string | 
   return blobUrls;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+/**
+ * ChatMessage renders a single chat bubble.
+ * It uses bubbleIndex and totalBubbles to determine its position in the conversation for UI logic (e.g., bridge placement).
+ */
+export const ChatMessage: React.FC<ChatMessageProps> = ({
+  message,
+  bubbleIndex,
+  totalBubbles,
+}) => {
   const { deleteMessage, updateMessage } = useConversation();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(typeof message.content === "string" ? message.content : "");
+  const [editedContent, setEditedContent] = useState(
+    typeof message.content === "string" ? message.content : ""
+  );
   const isUser = message.role === "user";
   const contentArr = Array.isArray(message.content) ? message.content : null;
   const blobUrls = useBase64ToBlobUrls(message.content);
@@ -73,7 +103,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
   const handleEdit = () => {
     setIsEditing(true);
-    setEditedContent(typeof message.content === "string" ? message.content : "");
+    setEditedContent(
+      typeof message.content === "string" ? message.content : ""
+    );
   };
 
   const handleSaveEdit = async () => {
@@ -84,7 +116,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     setIsEditing(false);
   };
 
-  function renderContent(content: string | MessageContentPart[]): React.ReactNode {
+  function renderContent(
+    content: string | MessageContentPart[]
+  ): React.ReactNode {
     if (typeof content === "string") {
       if (isEditing) {
         return (
@@ -96,28 +130,23 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               className="min-w-[200px] text-black"
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleSaveEdit}>Save</Button>
             </div>
           </div>
         );
       }
-      
+
       return (
         <div className="markdown">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-          >
-            {content}
-          </ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
       );
     }
     return content.map((part, idx) => {
-      if (
-        part.type === "input_text" ||
-        part.type === "output_text"
-      ) {
+      if (part.type === "input_text" || part.type === "output_text") {
         return <span key={idx}>{part.text}</span>;
       }
       if (isInputImage(part)) {
@@ -128,11 +157,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               key={idx}
               src={blobUrl}
               alt="User uploaded"
-              style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 8, display: "block", margin: "8px 0" }}
+              className="max-w-full max-h-80 rounded-lg block my-2"
             />
           );
         }
-        return <span key={idx} style={{ color: "red" }}>Image unavailable</span>;
+        return (
+          <span key={idx} style={{ color: "red" }}>
+            Image unavailable
+          </span>
+        );
       }
       return null;
     });
@@ -151,128 +184,192 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
-        <Avatar className={cn(
-          "h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium",
-          isUser 
-            ? "bg-streamwise-500 text-white ml-2" 
-            : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 mr-2"
-        )}>
+        <Avatar
+          className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium",
+            isUser
+              ? "bg-streamwise-500 text-white ml-2"
+              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 mr-2"
+          )}
+        >
           <span>{isUser ? "You" : "AI"}</span>
         </Avatar>
 
         <div className="relative group">
           {/* Mini bubble for action buttons */}
-          <div
-            className={cn(
-              "absolute left-1/2 z-20 flex items-center justify-center",
-              "transition-all duration-200",
-              "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 opacity-0",
-              "action-mini-bubble"
+          <div className="relative group">
+            {/*
+              Bridge logic:
+              - If this is the first bubble (bubbleIndex === 0), render a bottom bridge with high z-index (mini bubble pops downward).
+              - For all other bubbles, render a top bridge (mini bubble pops upward).
+              This ensures correct pop direction and hover bridging based on bubble position.
+            */}
+            {bubbleIndex === 0 ? (
+              <div
+                className="absolute left-1/2"
+                style={{
+                  width: "80px",
+                  height: "24px",
+                  transform: "translateX(-50%)",
+                  top: "100%",
+                  bottom: "auto",
+                  zIndex: 50,
+                  pointerEvents: "auto",
+                }}
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+            ) : (
+              <div
+                className="absolute left-1/2 z-10"
+                style={{
+                  width: "60px",
+                  height: "16px",
+                  transform: "translateX(-50%)",
+                  top: "auto",
+                  bottom: "100%",
+                  pointerEvents: "auto",
+                }}
+                tabIndex={-1}
+                aria-hidden="true"
+              />
             )}
-            style={{
-              transform: "translateX(-50%)",
-              top: "auto",
-              bottom: "100%",
-              marginBottom: "0.5rem"
-            }}
-            tabIndex={-1}
-            // Dynamic pop direction based on viewport position
-            onMouseEnter={e => {
-              const bubble = e.currentTarget;
-              const rect = bubble.getBoundingClientRect();
-              if (rect.top < 60) {
-                bubble.style.top = "100%";
-                bubble.style.bottom = "auto";
-                bubble.style.marginTop = "0.5rem";
-                bubble.style.marginBottom = "0";
-              } else {
-                bubble.style.top = "auto";
-                bubble.style.bottom = "100%";
-                bubble.style.marginTop = "0";
-                bubble.style.marginBottom = "0.5rem";
-              }
-            }}
-          >
+            {/* Mini bubble for action buttons, pop direction based on bubble index */}
+            {(() => {
+              // Deduplicated: single render, pop direction logic inside
+              const popDirection = bubbleIndex === 0 ? "down" : "up";
+              const style =
+                popDirection === "down"
+                  ? {
+                      top: "100%",
+                      bottom: "auto",
+                      marginTop: "0.5rem",
+                      marginBottom: 0,
+                    }
+                  : {
+                      top: "auto",
+                      bottom: "100%",
+                      marginTop: 0,
+                      marginBottom: "0.5rem",
+                    };
+              return (
+                <div
+                  className={cn(
+                    "absolute left-1/2 z-20 flex items-center justify-center",
+                    "transition-all duration-200",
+                    "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 opacity-0",
+                    "action-mini-bubble"
+                  )}
+                  style={{
+                    transform: "translateX(-50%)",
+                    ...style,
+                  }}
+                  tabIndex={-1}
+                >
+                  <div
+                    className={cn(
+                      "rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1 flex gap-1",
+                      "minibubble-compact"
+                    )}
+                    style={{
+                      minHeight: "36px",
+                      minWidth: "auto",
+                      alignItems: "center",
+                    }}
+                  >
+                    {/* Edit Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleEdit}
+                      className="h-7 w-7"
+                      aria-label="Edit message"
+                      tabIndex={0}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {/* Delete Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleDelete}
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      aria-label="Delete message"
+                      tabIndex={0}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    {/* Copy Raw Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (typeof message.content === "string") {
+                          navigator.clipboard.writeText(message.content);
+                        } else if (Array.isArray(message.content)) {
+                          const raw = message.content
+                            .map((part) =>
+                              part.type === "input_text" ||
+                              part.type === "output_text"
+                                ? part.text
+                                : part.type === "input_image"
+                                ? "[image]"
+                                : ""
+                            )
+                            .join("\n");
+                          navigator.clipboard.writeText(raw);
+                        }
+                      }}
+                      className="h-7 w-7"
+                      aria-label="Copy raw text"
+                      title="Copy raw text"
+                      tabIndex={0}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div
               className={cn(
-                "rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 px-2 py-1 flex gap-1",
-                "minibubble-compact"
+                "px-4 py-2 rounded-lg transition-shadow duration-200",
+                "bubble-action-highlight",
+                isUser
+                  ? "bg-streamwise-500 text-white"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
               )}
-              style={{
-                minHeight: "36px",
-                minWidth: "auto",
-                alignItems: "center"
-              }}
+              tabIndex={0}
             >
-              {/* Edit Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleEdit}
-                className="h-7 w-7"
-                aria-label="Edit message"
-                tabIndex={0}
+              <div
+                className={cn(
+                  "prose prose-sm max-w-none break-words",
+                  isUser ? "prose-invert" : "prose-gray dark:prose-invert"
+                )}
               >
-                <Edit className="h-4 w-4" />
-              </Button>
-              {/* Delete Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDelete}
-                className="h-7 w-7 text-destructive hover:text-destructive"
-                aria-label="Delete message"
-                tabIndex={0}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              {/* Copy Raw Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  if (typeof message.content === "string") {
-                    navigator.clipboard.writeText(message.content);
-                  } else if (Array.isArray(message.content)) {
-                    // Join all text parts for raw copy
-                    const raw = message.content
-                      .map((part) =>
-                        part.type === "input_text" || part.type === "output_text"
-                          ? part.text
-                          : part.type === "input_image"
-                          ? "[image]"
-                          : ""
-                      )
-                      .join("\n");
-                    navigator.clipboard.writeText(raw);
-                  }
-                }}
-                className="h-7 w-7"
-                aria-label="Copy raw text"
-                title="Copy raw text"
-                tabIndex={0}
-              >
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </Button>
-            </div>
-          </div>
-          <div
-            className={cn(
-              "px-4 py-2 rounded-lg transition-shadow duration-200",
-              "bubble-action-highlight",
-              isUser
-                ? "bg-streamwise-500 text-white"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-            )}
-            tabIndex={0}
-          >
-            <div className={cn(
-              "prose prose-sm max-w-none break-words",
-              isUser
-                ? "prose-invert"
-                : "prose-gray dark:prose-invert"
-            )}>
-              {renderContent(message.content)}
+                {renderContent(message.content)}
+              </div>
             </div>
           </div>
         </div>
