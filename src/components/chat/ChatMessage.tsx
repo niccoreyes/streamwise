@@ -140,7 +140,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       }
 
       return (
-        <div className="markdown">
+        <div className="prose prose-sm markdown">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
       );
@@ -346,7 +346,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               <div
                 className={cn(
                   "prose prose-sm max-w-none break-words",
-                  isUser ? "prose-invert" : "prose-gray dark:prose-invert"
+                  isUser ? "prose-user" : "prose-invert"
                 )}
               >
                 {renderContent(message.content)}
