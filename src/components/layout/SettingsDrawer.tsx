@@ -46,7 +46,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     "openai"
   );
   const [showAddKey, setShowAddKey] = useState(false);
-  const { webSearchConfig, setWebSearchConfig, systemMessage, setSystemMessage } = useSettings();
+  const { webSearchConfig, setWebSearchConfig, systemMessage, setSystemMessage, resetSettings } = useSettings();
   const [localSystemMessage, setLocalSystemMessage] = useState(currentConversation?.systemMessage ?? "");
 
   // Local state for web search fields
@@ -690,6 +690,20 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               className="min-h-[150px] resize-y"
             />
           </div>
+        </div>
+        <div className="p-6 pt-0">
+          <Separator className="mb-4" />
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to reset all settings to their default values? This will remove all API keys and customizations.")) {
+                resetSettings();
+              }
+            }}
+          >
+            Reset All Settings to Defaults
+          </Button>
         </div>
       </div>
     </>

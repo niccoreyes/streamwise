@@ -113,6 +113,7 @@ export type SettingsContextType = {
   setWebSearchConfig: (config: WebSearchConfig) => void;
   systemMessage: string;
   setSystemMessage: (msg: string) => void;
+  resetSettings: () => Promise<void>;
 };
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -268,6 +269,40 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     chatDb.setSetting("systemMessage", msg);
   };
 
+  // Reset all settings to default values and persist them
+  const resetSettings = async (): Promise<void> => {
+    setSelectedModel(AVAILABLE_MODELS[0]);
+    setWebSearchConfigState({
+      enabled: false,
+      contextSize: "medium",
+      location: {
+        type: "approximate",
+        country: "",
+        city: "",
+        region: "",
+        timezone: "",
+      },
+    });
+    setSystemMessageState("");
+    try {
+      // Removed db.clearAll and LocalStorage.clearAll as they do not exist
+      await chatDb.setSetting("webSearchConfig", {
+        enabled: false,
+        contextSize: "medium",
+        location: {
+          type: "approximate",
+          country: "",
+          city: "",
+          region: "",
+          timezone: "",
+        },
+      });
+      await chatDb.setSetting("systemMessage", "");
+    } catch (error) {
+      console.error("Failed to reset settings:", error);
+    }
+  };
+
   const value = {
     apiKeys,
     currentApiKey,
@@ -281,6 +316,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWebSearchConfig,
     systemMessage,
     setSystemMessage,
+    resetSettings,
   };
 
   return (
@@ -289,4 +325,3 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </SettingsContext.Provider>
   );
 };
-

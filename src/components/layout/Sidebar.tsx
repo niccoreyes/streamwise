@@ -16,17 +16,22 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { conversations, currentConversation, createNewConversation, setCurrentConversationById, updateConversation, deleteConversation } = useConversation();
-  const { selectedModel } = useSettings();
+  const { selectedModel, systemMessage, webSearchConfig } = useSettings();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>("");
 
   const isMobile = useIsMobile();
 
   const handleNewChat = () => {
-    createNewConversation(selectedModel.id, {
-      temperature: selectedModel.defaultTemperature,
-      maxTokens: selectedModel.maxTokens,
-    });
+    createNewConversation(
+      selectedModel.id,
+      {
+        temperature: selectedModel.defaultTemperature,
+        maxTokens: selectedModel.maxTokens,
+      },
+      systemMessage,
+      webSearchConfig
+    );
   };
 
   const startEditing = (id: string, currentTitle: string) => {

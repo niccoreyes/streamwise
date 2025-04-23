@@ -12,7 +12,12 @@ type ConversationContextType = {
   currentConversation: Conversation | null;
   isLoading: boolean;
   setCurrentConversationById: (id: string) => Promise<void>;
-  createNewConversation: (modelId: string, modelSettings: ModelSettings) => Promise<Conversation>;
+  createNewConversation: (
+    modelId: string,
+    modelSettings: ModelSettings,
+    systemMessage: string,
+    webSearchConfig: { enabled: boolean; contextSize: string; location: any }
+  ) => Promise<Conversation>;
   updateConversation: (conversation: Conversation) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
@@ -136,7 +141,12 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // If no conversations exist, create a default one
         if (fixedConversations.length === 0) {
-          const defaultConversation = await createNewConversation('gpt-4o', defaultModelSettings);
+          const defaultConversation = await createNewConversation(
+            'gpt-4o',
+            defaultModelSettings,
+            settings.systemMessage,
+            settings.webSearchConfig
+          );
           setCurrentConversation(defaultConversation);
         }
       } finally {
@@ -162,6 +172,21 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const conversation = conversations.find((conv) => conv.id === id);
     if (conversation) {
       setCurrentConversation(conversation);
+
+      // Sync global settings context to match the selected conversation
+      if (conversation.modelId && settings.setSelectedModel) {
+        settings.setSelectedModel(conversation.modelId);
+      }
+      if (conversation.modelSettings && conversation.modelSettings.webSearchSettings && settings.setWebSearchConfig) {
+        settings.setWebSearchConfig({
+          enabled: !!conversation.webSearchEnabled,
+          contextSize: conversation.modelSettings.webSearchSettings.contextSize,
+          location: { ...conversation.modelSettings.webSearchSettings.location }
+        });
+      }
+      if (typeof conversation.systemMessage === "string" && settings.setSystemMessage) {
+        settings.setSystemMessage(conversation.systemMessage);
+      }
       
       try {
         const config = await db.getConfig();
@@ -177,7 +202,9 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const createNewConversation = async (
     modelId: string,
-    modelSettings: ModelSettings
+    modelSettings: ModelSettings,
+    systemMessage: string,
+    webSearchConfig: { enabled: boolean; contextSize: string; location: any }
   ): Promise<Conversation> => {
     // Utility to get the next available chat number
     function getNextChatNumber(existingConversations: Conversation[]): number {
@@ -202,8 +229,15 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       createdAt: Date.now(),
       updatedAt: Date.now(),
       modelId,
-      modelSettings,
-      webSearchEnabled: false,
+      modelSettings: {
+        ...modelSettings,
+        webSearchSettings: {
+          contextSize: webSearchConfig.contextSize as "low" | "medium" | "high",
+          location: { ...webSearchConfig.location }
+        }
+      },
+      webSearchEnabled: webSearchConfig.enabled,
+      systemMessage,
     };
     
     await saveConversationToStorage(newConversation);
@@ -270,7 +304,12 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (nextConversation) setCurrentConversation(nextConversation);
       } else {
         // Create a new conversation if this was the last one
-        const newConversation = await createNewConversation('gpt-4o', defaultModelSettings);
+        const newConversation = await createNewConversation(
+          'gpt-4o',
+          defaultModelSettings,
+          settings.systemMessage,
+          settings.webSearchConfig
+        );
         setCurrentConversation(newConversation);
       }
     }

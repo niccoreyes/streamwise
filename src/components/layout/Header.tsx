@@ -15,13 +15,18 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSidebar 
 }) => {
   const { createNewConversation } = useConversation();
-  const { selectedModel } = useSettings();
+  const { selectedModel, systemMessage, webSearchConfig } = useSettings();
 
   const handleNewChat = () => {
-    createNewConversation(selectedModel.id, {
-      temperature: selectedModel.defaultTemperature,
-      maxTokens: selectedModel.maxTokens,
-    });
+    createNewConversation(
+      selectedModel.id,
+      {
+        temperature: selectedModel.defaultTemperature,
+        maxTokens: selectedModel.maxTokens,
+      },
+      systemMessage,
+      webSearchConfig
+    );
   };
 
   return (
@@ -58,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleNewChat}
-            className="sm:hidden"
+            className="ml-2"
           >
             <Plus className="h-5 w-5" />
           </Button>
