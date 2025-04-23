@@ -73,6 +73,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   // On drawer close, commit localSystemMessage to context/IndexedDB
   const handleDrawerClose = () => {
     setSystemMessage(localSystemMessage);
+    setWebSearchConfig({
+      ...webSearchConfig,
+      enabled: localWebSearchEnabled,
+      contextSize: localContextSize,
+      location: {
+        ...webSearchConfig.location,
+        country: localCountry,
+        city: localCity,
+        region: localRegion,
+        timezone: localTimezone,
+        type: "approximate"
+      }
+    });
     if (currentConversation) {
       const updatedConversation = {
         ...currentConversation,

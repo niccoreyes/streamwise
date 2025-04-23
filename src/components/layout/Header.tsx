@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleNewChat}
-            className="ml-2"
+            className="sm:hidden"
           >
             <Plus className="h-5 w-5" />
           </Button>
