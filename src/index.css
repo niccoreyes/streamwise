@@ -169,3 +169,7 @@
   background: none;
   color: inherit;
 }
+
+.markdown a{
+  color: blue;
+}
