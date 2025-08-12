@@ -156,7 +156,8 @@ export async function* streamChatCompletion(
     previous_response_id: previous_response_id || undefined,
   };
 
-  if (!isOReasoningModel) {
+  // Some reasoning models (o-series, GPT-5 family) do not support temperature
+  if (!isOReasoningModel && !isGpt5) {
     payload.temperature = opts.temperature;
   }
 
