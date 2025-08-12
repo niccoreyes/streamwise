@@ -12,7 +12,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'OpenAI\'s latest model with a 1,000,000 token context window.',
     supportsWebSearch: true,
     maxTokens: 1000000,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-4.1-mini',
@@ -20,7 +20,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'Smaller version of GPT-4.1 with a 256,000 token context window.',
     supportsWebSearch: true,
     maxTokens: 256000,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-4.1-nano',
@@ -28,7 +28,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'Fast and cost-effective nano version of GPT-4.1 with a 128,000 token context window.',
     supportsWebSearch: false,
     maxTokens: 128000,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'o4-mini',
@@ -36,7 +36,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'OpenAI\'s o4-mini model with a 128,000 token context window.',
     supportsWebSearch: true,
     maxTokens: 128000,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'o3',
@@ -44,7 +44,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'OpenAI\'s base reasoning model with a 4,096 token context window.',
     supportsWebSearch: true,
     maxTokens: 4096,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'o3-mini',
@@ -52,7 +52,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'OpenAI\'s o3-mini model with a 16,384 token context window.',
     supportsWebSearch: false,
     maxTokens: 16384,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-4o',
@@ -60,7 +60,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'OpenAI\'s latest and most capable multimodal model.',
     supportsWebSearch: true,
     maxTokens: 16384,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-4o-mini',
@@ -68,7 +68,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'Smaller, faster, and more cost-effective model.',
     supportsWebSearch: true,
     maxTokens: 16384,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-4.5-preview',
@@ -76,7 +76,7 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'Advanced preview of OpenAI\'s next-gen model.',
     supportsWebSearch: true,
     maxTokens: 8192,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
   },
   {
     id: 'gpt-3.5-turbo',
@@ -84,7 +84,31 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: 'Fast and efficient model for most use cases.',
     supportsWebSearch: false,
     maxTokens: 4096,
-    defaultTemperature: 0.7,
+    defaultTemperature: 0.5,
+  },
+  {
+    id: 'gpt-5',
+    name: 'GPT-5',
+    description: 'Most capable GPT-5 for complex reasoning and code-heavy tasks.',
+    supportsWebSearch: true,
+    maxTokens: 200000,
+    defaultTemperature: 0.5,
+  },
+  {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini',
+    description: 'Cost-optimized reasoning and chat with great speed.',
+    supportsWebSearch: true,
+    maxTokens: 128000,
+    defaultTemperature: 0.5,
+  },
+  {
+    id: 'gpt-5-nano',
+    name: 'GPT-5 Nano',
+    description: 'High-throughput for simple instruction following.',
+    supportsWebSearch: true,
+    maxTokens: 64000,
+    defaultTemperature: 0.5,
   }
 ];
 

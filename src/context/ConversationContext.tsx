@@ -27,8 +27,10 @@ type ConversationContextType = {
 };
 
 const defaultModelSettings: ModelSettings = {
-  temperature: 0.7,
+  temperature: 0.5,
   maxTokens: 1000,
+  reasoningEffort: "medium",
+  verbosity: "medium",
 };
 
 const ConversationContext = createContext<ConversationContextType | undefined>(undefined);
@@ -89,7 +91,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           }
 
           // Ensure modelSettings.webSearchSettings
-          if (!newConv.modelSettings) newConv.modelSettings = { temperature: 0.7, maxTokens: 1000 };
+          if (!newConv.modelSettings) newConv.modelSettings = { temperature: 0.5, maxTokens: 1000, reasoningEffort: "medium", verbosity: "medium" };
           if (typeof newConv.modelSettings.webSearchSettings === "undefined") {
             newConv.modelSettings.webSearchSettings = {
               contextSize: defaultWebSearchConfig.contextSize,
@@ -114,6 +116,16 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 }
               }
             }
+          }
+
+          // Ensure GPT-5 settings defaults
+          if (typeof (newConv.modelSettings as any).reasoningEffort === "undefined") {
+            (newConv.modelSettings as any).reasoningEffort = "medium";
+            changed = true;
+          }
+          if (typeof (newConv.modelSettings as any).verbosity === "undefined") {
+            (newConv.modelSettings as any).verbosity = "medium";
+            changed = true;
           }
 
           if (changed) updated = true;
@@ -469,6 +481,8 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       maxTokens,
       messages,
       ...(tools ? { tools } : {}),
+      reasoningEffort: (updatedConversation.modelSettings as any).reasoningEffort ?? "medium",
+      verbosity: (updatedConversation.modelSettings as any).verbosity ?? "medium",
       systemMessage: updatedConversation.systemMessage,
     })) {
       if (event.type === "final") {

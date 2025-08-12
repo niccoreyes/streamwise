@@ -142,6 +142,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             temperature: model.defaultTemperature,
             maxTokens: model.maxTokens,
             webSearchSettings,
+            ...(modelId.startsWith("gpt-5")
+              ? {
+                  reasoningEffort:
+                    (currentConversation.modelSettings as any)?.reasoningEffort ?? "medium",
+                  verbosity:
+                    (currentConversation.modelSettings as any)?.verbosity ?? "medium",
+                }
+              : {}),
           },
         };
         await updateConversation(updatedConversation);
@@ -174,6 +182,30 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       },
     };
 
+    updateConversation(updatedConversation);
+  };
+
+  const handleReasoningChange = (value: "minimal" | "low" | "medium" | "high") => {
+    if (!currentConversation) return;
+    const updatedConversation = {
+      ...currentConversation,
+      modelSettings: {
+        ...currentConversation.modelSettings,
+        reasoningEffort: value,
+      },
+    };
+    updateConversation(updatedConversation);
+  };
+
+  const handleVerbosityChange = (value: "low" | "medium" | "high") => {
+    if (!currentConversation) return;
+    const updatedConversation = {
+      ...currentConversation,
+      modelSettings: {
+        ...currentConversation.modelSettings,
+        verbosity: value,
+      },
+    };
     updateConversation(updatedConversation);
   };
 
@@ -604,13 +636,52 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     }
                     className="w-full accent-streamwise-500"
                   />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>256</span>
-                    <span>{selectedModel.maxTokens}</span>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>256</span>
+                      <span>{selectedModel.maxTokens}</span>
+                    </div>
                   </div>
+
+                  {selectedModel.id.startsWith("gpt-5") && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Reasoning Effort</Label>
+                        <Select
+                          value={(currentConversation.modelSettings.reasoningEffort ?? "medium") as any}
+                          onValueChange={(v) => handleReasoningChange(v as any)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minimal">Minimal</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Verbosity</Label>
+                        <Select
+                          value={(currentConversation.modelSettings.verbosity ?? "medium") as any}
+                          onValueChange={(v) => handleVerbosityChange(v as any)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
           )}
 
 

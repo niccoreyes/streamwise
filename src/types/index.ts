@@ -35,6 +35,8 @@ export type Conversation = {
 export type ModelSettings = {
   temperature: number;
   maxTokens: number;
+  reasoningEffort?: "minimal" | "low" | "medium" | "high";
+  verbosity?: "low" | "medium" | "high";
   webSearchSettings?: WebSearchSettings;
 };
 

@@ -23,6 +23,8 @@ export interface StreamOptions {
   tools?: any[]; // For web search and other tool integrations
   systemMessage?: string; // Optional system message to prepend
   previousResponseId?: string; // For maintaining conversation state with Responses API
+  reasoningEffort?: "minimal" | "low" | "medium" | "high"; // GPT-5 only
+  verbosity?: "low" | "medium" | "high"; // GPT-5 only
 }
 
 /**
@@ -122,6 +124,7 @@ export async function* streamChatCompletion(
   // Build the payload for the Responses API
   // Only include temperature if model is NOT an "o" series reasoning model (e.g., o3, o4)
   const isOReasoningModel = /^o\d/i.test(opts.model);
+  const isGpt5 = /^gpt-5/i.test(opts.model);
 
   // Clean tools: remove empty string fields from user_location
   let cleanedTools = undefined;
@@ -155,6 +158,11 @@ export async function* streamChatCompletion(
 
   if (!isOReasoningModel) {
     payload.temperature = opts.temperature;
+  }
+
+  if (isGpt5) {
+    payload.reasoning = { effort: opts.reasoningEffort || "medium" };
+    payload.text = { verbosity: opts.verbosity || "medium" };
   }
 
   // Remove undefined fields
