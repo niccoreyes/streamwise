@@ -18,7 +18,7 @@ type ConversationContextType = {
     systemMessage: string,
     webSearchConfig: { enabled: boolean; contextSize: string; location: any }
   ) => Promise<Conversation>;
-  updateConversation: (conversation: Conversation) => Promise<void>;
+  updateConversation: (conversation: Conversation, preserveTimestamp?: boolean) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<void>;
   updateMessage: (message: Message) => Promise<void>;
@@ -133,7 +133,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
         if (updated) {
           for (const conv of fixedConversations) {
-            await saveConversationToStorage(conv);
+            await saveConversationToStorage(conv, true); // Preserve timestamps during migration
           }
         }
         setConversations(fixedConversations);
@@ -169,14 +169,14 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     loadConversations();
   }, [settings.apiKeys, settings.currentApiKey]);
 
-  const saveConversationToStorage = async (conversation: Conversation): Promise<void> => {
+  const saveConversationToStorage = async (conversation: Conversation, preserveTimestamp = false): Promise<void> => {
     try {
       // Save to IndexedDB
-      await db.saveConversation(conversation);
+      await db.saveConversation(conversation, preserveTimestamp);
     } catch (error) {
       console.error('Failed to save conversation to IndexedDB:', error);
       // Fall back to localStorage
-      LocalStorage.saveConversation(conversation);
+      LocalStorage.saveConversation(conversation, preserveTimestamp);
     }
   };
 
@@ -270,7 +270,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return newConversation;
   };
 
-  const updateConversation = async (conversation: Conversation): Promise<void> => {
+  const updateConversation = async (conversation: Conversation, preserveTimestamp = false): Promise<void> => {
     // Prevent duplicate "Chat N" titles
     if (/^Chat \d+$/.test(conversation.title)) {
       const n = Number(conversation.title.replace("Chat ", ""));
@@ -282,7 +282,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return;
       }
     }
-    await saveConversationToStorage(conversation);
+    await saveConversationToStorage(conversation, preserveTimestamp);
     
     setConversations((prevConversations) =>
       prevConversations.map((conv) =>

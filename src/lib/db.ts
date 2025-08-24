@@ -28,16 +28,17 @@ class StreamwiseDatabase extends Dexie {
     return await this.conversations.get(id);
   }
 
-  async saveConversation(conversation: Conversation): Promise<string> {
+  async saveConversation(conversation: Conversation, preserveTimestamp = false): Promise<string> {
     const now = Date.now();
     
     if (!conversation.id) {
       conversation.id = uuidv4();
       conversation.createdAt = now;
       conversation.updatedAt = now;
-    } else {
+    } else if (!preserveTimestamp) {
       conversation.updatedAt = now;
     }
+    // If preserveTimestamp is true, keep existing updatedAt
     
     await this.conversations.put(conversation);
     return conversation.id;

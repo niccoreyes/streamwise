@@ -44,7 +44,7 @@ export const LocalStorage = {
     return this.getConversations().find((conv) => conv.id === id);
   },
 
-  saveConversation(conversation: Conversation): string {
+  saveConversation(conversation: Conversation, preserveTimestamp = false): string {
     const now = Date.now();
     const conversations = this.getConversations();
     
@@ -54,7 +54,10 @@ export const LocalStorage = {
       conversation.updatedAt = now;
       conversations.push(conversation);
     } else {
-      conversation.updatedAt = now;
+      if (!preserveTimestamp) {
+        conversation.updatedAt = now;
+      }
+      // If preserveTimestamp is true, keep existing updatedAt
       const index = conversations.findIndex((conv) => conv.id === conversation.id);
       
       if (index !== -1) {
