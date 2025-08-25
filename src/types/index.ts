@@ -30,6 +30,9 @@ export type Conversation = {
   modelSettings: ModelSettings;
   webSearchEnabled: boolean;
   systemMessage?: string;
+  // New timestamp fields for priority sorting
+  titleUpdatedAt?: number; // When title was last changed
+  lastMessageAt?: number;  // When last message was added/updated
 };
 
 export type ModelSettings = {

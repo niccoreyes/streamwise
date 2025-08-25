@@ -90,6 +90,12 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             changed = true;
           }
 
+          // Migrate timestamps: populate lastMessageAt if missing
+          if (typeof newConv.lastMessageAt === "undefined" && newConv.messages && newConv.messages.length > 0) {
+            newConv.lastMessageAt = Math.max(...newConv.messages.map(m => m.timestamp));
+            changed = true;
+          }
+
           // Ensure modelSettings.webSearchSettings
           if (!newConv.modelSettings) newConv.modelSettings = { temperature: 0.5, maxTokens: 1000, reasoningEffort: "medium", verbosity: "medium" };
           if (typeof newConv.modelSettings.webSearchSettings === "undefined") {
@@ -340,6 +346,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ...currentConversation,
       messages: [...currentConversation.messages, newMessage],
       updatedAt: Date.now(),
+      lastMessageAt: newMessage.timestamp, // Update lastMessageAt
     };
     
     await updateConversation(updatedConversation);
@@ -356,6 +363,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ...currentConversation,
       messages: updatedMessages,
       updatedAt: Date.now(),
+      lastMessageAt: Math.max(...updatedMessages.map(m => m.timestamp)), // Update lastMessageAt
     };
     
     await updateConversation(updatedConversation);
@@ -370,6 +378,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ...currentConversation,
       messages: updatedMessages,
       updatedAt: Date.now(),
+      lastMessageAt: updatedMessages.length > 0 ? Math.max(...updatedMessages.map(m => m.timestamp)) : undefined,
     };
     
     await updateConversation(updatedConversation);
@@ -393,6 +402,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ...currentConversation,
       messages: [...currentConversation.messages, userMessage],
       updatedAt: Date.now(),
+      lastMessageAt: userMessage.timestamp, // Update lastMessageAt for user message
     };
     await updateConversation(updatedConversation);
 
@@ -522,6 +532,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         msg.id === assistantMessage.id ? { ...assistantMessage, content: fullContent } : msg
       ),
       updatedAt: Date.now(),
+      lastMessageAt: assistantMessage.timestamp, // Update lastMessageAt for assistant message
     };
     await updateConversation(updatedConversation);
     } catch (err) {

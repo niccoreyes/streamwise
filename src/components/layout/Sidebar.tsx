@@ -46,8 +46,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     if (conversation && editTitle.trim()) {
       await updateConversation({
         ...conversation,
-        title: editTitle.trim()
-      });
+        title: editTitle.trim(),
+        titleUpdatedAt: Date.now() // Set title update timestamp
+      }, true); // Preserve other timestamps
     }
     setEditingId(null);
   };
@@ -116,7 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             ) : (
               <div className="space-y-1">
                 {conversations
-                  .sort((a, b) => b.updatedAt - a.updatedAt)
+                  .sort((a, b) => {
+                    // Priority: titleUpdatedAt > lastMessageAt > createdAt
+                    const getDisplayTime = (conv: any) => 
+                      conv.titleUpdatedAt || conv.lastMessageAt || conv.createdAt;
+                    return getDisplayTime(b) - getDisplayTime(a);
+                  })
                   .map((conversation) => (
                     <div
                       key={conversation.id}
@@ -145,7 +151,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                             {conversation.title}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {format(new Date(conversation.updatedAt), "MMM d, yyyy")}
+                            {(() => {
+                              // Display contextual timestamp with priority
+                              if (conversation.titleUpdatedAt) {
+                                return `Renamed ${format(new Date(conversation.titleUpdatedAt), "MMM d, yyyy")}`;
+                              } else if (conversation.lastMessageAt) {
+                                return `Last message ${format(new Date(conversation.lastMessageAt), "MMM d, yyyy")}`;
+                              } else {
+                                return `Created ${format(new Date(conversation.createdAt), "MMM d, yyyy")}`;
+                              }
+                            })()}
                           </div>
                         </button>
                       )}

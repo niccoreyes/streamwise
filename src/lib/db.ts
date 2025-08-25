@@ -12,11 +12,33 @@ class StreamwiseDatabase extends Dexie {
   constructor() {
     super('streamwiseAI');
     
+    // Version 1 - Original schema
     this.version(1).stores({
       conversations: 'id, title, createdAt, updatedAt, modelId',
       messages: 'id, conversationId, role, timestamp',
       apiKeys: 'id, name, provider, createdAt',
       config: 'id'
+    });
+
+    // Version 2 - Add new timestamp fields with safe migration
+    this.version(2).stores({
+      conversations: 'id, title, createdAt, updatedAt, modelId, titleUpdatedAt, lastMessageAt',
+      messages: 'id, conversationId, role, timestamp',
+      apiKeys: 'id, name, provider, createdAt',
+      config: 'id'
+    }).upgrade(async (tx) => {
+      // Migrate existing conversations by populating lastMessageAt
+      const conversations = await tx.table('conversations').toArray();
+      
+      for (const conv of conversations) {
+        if (conv.messages && conv.messages.length > 0) {
+          // Find the most recent message timestamp
+          const latestMessageTime = Math.max(...conv.messages.map((m: any) => m.timestamp));
+          conv.lastMessageAt = latestMessageTime;
+        }
+        // titleUpdatedAt remains undefined for existing conversations
+        await tx.table('conversations').put(conv);
+      }
     });
   }
 
