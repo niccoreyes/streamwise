@@ -277,6 +277,14 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const updateConversation = async (conversation: Conversation, preserveTimestamp = false): Promise<void> => {
+    // Clear cache if model or system message changed
+    if (currentConversation?.id === conversation.id) {
+      if (currentConversation.modelId !== conversation.modelId || 
+          currentConversation.systemMessage !== conversation.systemMessage) {
+        conversation.lastResponseId = undefined;
+      }
+    }
+    
     // Prevent duplicate "Chat N" titles
     if (/^Chat \d+$/.test(conversation.title)) {
       const n = Number(conversation.title.replace("Chat ", ""));
@@ -484,6 +492,10 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ),
       updatedAt: Date.now(),
     });
+    
+    // Extract previousResponseId for prompt caching
+    const previousResponseId = updatedConversation.lastResponseId;
+    
     for await (const event of streamChatCompletion({
       apiKey,
       model,
@@ -494,6 +506,10 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       reasoningEffort: (updatedConversation.modelSettings as any).reasoningEffort ?? "medium",
       verbosity: (updatedConversation.modelSettings as any).verbosity ?? "medium",
       systemMessage: updatedConversation.systemMessage,
+      previousResponseId, // Add for prompt caching
+    }, (responseId) => {
+      // Capture new response ID for future caching
+      updatedConversation.lastResponseId = responseId;
     })) {
       if (event.type === "final") {
         // On "final", immediately set the assistant message to the full/final text
@@ -525,7 +541,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         );
       }
     }
-    // After streaming, persist the final assistant message
+    // After streaming, persist the final assistant message with response ID
     updatedConversation = {
       ...updatedConversation,
       messages: updatedConversation.messages.map((msg) =>
@@ -533,6 +549,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ),
       updatedAt: Date.now(),
       lastMessageAt: assistantMessage.timestamp, // Update lastMessageAt for assistant message
+      lastResponseId: updatedConversation.lastResponseId, // Persist response ID for caching
     };
     await updateConversation(updatedConversation);
     } catch (err) {

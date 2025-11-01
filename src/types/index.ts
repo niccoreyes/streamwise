@@ -33,6 +33,7 @@ export type Conversation = {
   // New timestamp fields for priority sorting
   titleUpdatedAt?: number; // When title was last changed
   lastMessageAt?: number;  // When last message was added/updated
+  lastResponseId?: string; // OpenAI response ID for prompt caching
 };
 
 export type ModelSettings = {

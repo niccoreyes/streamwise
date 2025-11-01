@@ -40,6 +40,14 @@ class StreamwiseDatabase extends Dexie {
         await tx.table('conversations').put(conv);
       }
     });
+
+    // Version 3 - Add prompt caching support (no migration needed, optional field)
+    this.version(3).stores({
+      conversations: 'id, title, createdAt, updatedAt, modelId, titleUpdatedAt, lastMessageAt',
+      messages: 'id, conversationId, role, timestamp',
+      apiKeys: 'id, name, provider, createdAt',
+      config: 'id'
+    });
   }
 
   async getConversations(): Promise<Conversation[]> {
