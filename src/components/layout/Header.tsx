@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
       {
         temperature: selectedModel.defaultTemperature,
         maxTokens: selectedModel.maxTokens,
-        reasoningEffort: "medium",
+        reasoningEffort: "high",
         verbosity: "medium",
       },
       systemMessage,

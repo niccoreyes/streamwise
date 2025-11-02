@@ -146,7 +146,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [currentApiKey, setCurrentApiKey] = useState<ApiKey | null>(null);
   const [availableModels] = useState<AIModel[]>(AVAILABLE_MODELS);
-  const [selectedModel, setSelectedModel] = useState<AIModel>(AVAILABLE_MODELS[0]);
+  const [selectedModel, setSelectedModel] = useState<AIModel>(
+    AVAILABLE_MODELS.find(m => m.id === 'gpt-5-nano') || AVAILABLE_MODELS[0]
+  );
   const [webSearchConfig, setWebSearchConfigState] = useState<WebSearchConfig>({
     enabled: false,
     contextSize: "medium",
@@ -295,7 +297,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Reset all settings to default values and persist them
   const resetSettings = async (): Promise<void> => {
-    setSelectedModel(AVAILABLE_MODELS[0]);
+    setSelectedModel(AVAILABLE_MODELS.find(m => m.id === 'gpt-5-nano') || AVAILABLE_MODELS[0]);
     setWebSearchConfigState({
       enabled: false,
       contextSize: "medium",
