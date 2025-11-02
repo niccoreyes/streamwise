@@ -343,6 +343,24 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               )}
               tabIndex={0}
             >
+              {/* Show status indicator if present (only for assistant messages with no content yet) */}
+              {!isUser && message.status && !message.content && (
+                <div className="flex items-center gap-2 text-sm opacity-70 italic">
+                  <div className="animate-pulse">●</div>
+                  <span>
+                    {message.status === "thinking" 
+                      ? "Thinking..." 
+                      : message.status === "searching"
+                      ? message.statusDetails 
+                        ? `Searching: ${message.statusDetails}`
+                        : "Searching the web..."
+                      : message.status === "processing"
+                      ? "Processing results..."
+                      : ""}
+                  </span>
+                </div>
+              )}
+              
               <div
                 className={cn(
                   "prose prose-sm max-w-none break-words",

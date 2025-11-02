@@ -18,6 +18,8 @@ export type Message = {
   timestamp: number;
   mediaUrl?: string;
   mediaType?: "image" | "audio" | "video";
+  status?: "thinking" | "searching" | "processing"; // Temporary status during streaming
+  statusDetails?: string; // Optional details like search query
 };
 
 export type Conversation = {

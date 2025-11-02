@@ -37,8 +37,10 @@ export interface StreamOptions {
  * @param opts - StreamOptions including apiKey, model, temperature, maxTokens, and messages.
  * @param onResponseId - Optional callback to receive the response id for multi-turn conversations.
  */
-// StreamEvent type: { type: "delta" | "final", text: string }
-export type StreamEvent = { type: "delta" | "final"; text: string };
+// StreamEvent type: can be delta/final text, or status updates
+export type StreamEvent = 
+  | { type: "delta" | "final"; text: string }
+  | { type: "status"; status: string; details?: string };
 
 export async function* streamChatCompletion(
   opts: StreamOptions,
@@ -191,6 +193,39 @@ export async function* streamChatCompletion(
       responseIdCaptured = true;
       if (onResponseId) onResponseId(chunk.response.id);
     }
+
+    // Handle status events (reasoning, web search)
+    if (chunk && chunk.type) {
+      // Reasoning started
+      if (chunk.type === "response.output_item.added" && chunk.item?.type === "reasoning") {
+        yield { type: "status", status: "thinking" };
+        continue;
+      }
+      
+      // Web search states
+      if (chunk.type === "response.output_item.added" && chunk.item?.type === "web_search_call") {
+        yield { type: "status", status: "searching" };
+        continue;
+      }
+      if (chunk.type === "response.web_search_call.searching") {
+        yield { type: "status", status: "searching" };
+        continue;
+      }
+      if (chunk.type === "response.web_search_call.completed") {
+        yield { type: "status", status: "processing" };
+        continue;
+      }
+      
+      // Web search done with query details
+      if (chunk.type === "response.output_item.done" && chunk.item?.type === "web_search_call") {
+        const query = chunk.item?.action?.query;
+        if (query) {
+          yield { type: "status", status: "searching", details: query };
+        }
+        continue;
+      }
+    }
+
     // Always yield deltas as they arrive, and yield "final" only at the end
     let isFinal = false;
     let text = "";

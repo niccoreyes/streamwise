@@ -513,10 +513,34 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Capture new response ID for future caching
       updatedConversation.lastResponseId = responseId;
     })) {
-      if (event.type === "final") {
+      if (event.type === "status") {
+        // Update status temporarily (only if no content yet)
+        if (!fullContent) {
+          const newAssistantMessage = { 
+            ...assistantMessage, 
+            status: event.status as any,
+            statusDetails: event.details 
+          };
+          setCurrentConversation((prev) => prev
+            ? {
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === assistantMessage.id ? newAssistantMessage : msg
+                ),
+                updatedAt: Date.now(),
+              }
+            : null
+          );
+        }
+      } else if (event.type === "final") {
         // On "final", immediately set the assistant message to the full/final text
         fullContent = event.text;
-        const newAssistantMessage = { ...assistantMessage, content: fullContent };
+        const newAssistantMessage = { 
+          ...assistantMessage, 
+          content: fullContent,
+          status: undefined,
+          statusDetails: undefined
+        };
         setCurrentConversation((prev) => prev
           ? {
               ...prev,
@@ -527,10 +551,15 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             }
           : null
         );
-      } else {
+      } else if (event.type === "delta") {
         // Overwrite the previous content with the new state after each delta
         fullContent += event.text;
-        const newAssistantMessage = { ...assistantMessage, content: fullContent };
+        const newAssistantMessage = { 
+          ...assistantMessage, 
+          content: fullContent,
+          status: undefined, // Clear status when content starts
+          statusDetails: undefined
+        };
         setCurrentConversation((prev) => prev
           ? {
               ...prev,
