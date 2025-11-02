@@ -6,6 +6,7 @@ import { LocalStorage } from '@/lib/localStorage';
 import { Conversation, Message, ModelSettings } from '@/types';
 import { streamChatCompletion, ChatMessage } from '@/lib/openaiStreaming';
 import { useSettings } from './useSettings';
+import { useToast } from '@/hooks/use-toast';
 
 type ConversationContextType = {
   conversations: Conversation[];
@@ -40,6 +41,7 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const settings = useSettings();
+  const { toast } = useToast();
 
   // Debug: log settings on every render
 
@@ -553,7 +555,21 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
     await updateConversation(updatedConversation);
     } catch (err) {
-      assistantMessage.content = "Error streaming response from OpenAI.";
+      console.error("Error streaming response from OpenAI:", err);
+      
+      // Extract detailed error message from OpenAI API response
+      let errorMessage = "Error streaming response from OpenAI.";
+      if (err && typeof err === 'object') {
+        // OpenAI SDK wraps errors with error.error.message
+        const apiError = (err as any).error;
+        if (apiError?.message) {
+          errorMessage = apiError.message;
+        } else if ((err as Error).message) {
+          errorMessage = (err as Error).message;
+        }
+      }
+      
+      assistantMessage.content = errorMessage;
       updatedConversation = {
         ...updatedConversation,
         messages: updatedConversation.messages.map((msg) =>
@@ -562,6 +578,12 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         updatedAt: Date.now(),
       };
       await updateConversation(updatedConversation);
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
   const value = {
